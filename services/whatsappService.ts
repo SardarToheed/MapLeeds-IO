@@ -11,7 +11,14 @@ export const isMobileDevice = (): boolean => {
  */
 export const generateWhatsAppLink = (phone: string, text: string): string => {
   // Remove non-digits (keep country code if present in digits, e.g. 1555...)
-  const cleanPhone = phone.replace(/\D/g, '');
+  let cleanPhone = phone.replace(/\D/g, '');
+  
+  // Replace leading '0' with '92' (Pakistan) country code.
+  // This converts local numbers (e.g., 03001234567) to international format (e.g., 923001234567).
+  if (cleanPhone.startsWith('0')) {
+    cleanPhone = '92' + cleanPhone.substring(1);
+  }
+
   const encodedText = encodeURIComponent(text);
   
   // Mobile: use wa.me to trigger the native app intent

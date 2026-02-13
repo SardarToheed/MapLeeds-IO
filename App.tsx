@@ -22,6 +22,7 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  ArrowRight,
   ExternalLink,
   Play,
   StopCircle,
@@ -37,21 +38,17 @@ import {
   Clock,
   Sparkles,
   ChevronRight,
-  MoreHorizontal
+  MoreHorizontal,
+  Map,
+  Locate,
+  Crosshair
 } from 'lucide-react';
 import { StatsCard } from './components/StatsCard';
 import { OnboardingModal } from './components/OnboardingModal';
-import { searchBusinesses, generateEmailContent, hasApiKey, validateWhatsAppNumber } from './services/geminiService';
+import { searchBusinesses, generateEmailContent, hasApiKey, validateWhatsAppNumber, lookupLocation, reverseGeocode } from './services/geminiService';
 import { generateWhatsAppLink, openWhatsAppTab, isMobileDevice, copyImageToClipboard, canNativeShare, shareContent } from './services/whatsappService';
 import { Lead, Campaign, ViewState, SearchHistoryItem } from './types';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-
-// --- MOCK DATA FOR DASHBOARD ---
-const MOCK_LEADS: Lead[] = [
-  { id: '1', name: 'Smile Dental', category: 'Dentist', address: '123 Market St, SF', phone: '+1 415-555-0123', email: 'contact@smiledental.com', website: 'smiledental.com', rating: 4.8, status: 'New', source: 'Manual' },
-  { id: '2', name: 'Tech Innovators', category: 'Software', address: '404 Silicon Ave, CA', phone: '+1 650-555-9876', email: 'hello@techinnovators.io', website: 'techinnovators.io', rating: 5.0, status: 'Contacted', source: 'Import' },
-  { id: '3', name: 'Green Cafe', category: 'Restaurant', address: '88 Coffee Ln, NY', phone: '+1 212-555-4567', email: 'manager@greencafe.com', website: 'greencafe.com', rating: 4.2, status: 'Converted', source: 'Manual' },
-];
 
 type SortKey = 'name' | 'rating' | 'status' | 'address';
 type SortDirection = 'asc' | 'desc';
@@ -60,7 +57,7 @@ const App: React.FC = () => {
   // --- STATE ---
   const [view, setView] = useState<ViewState>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [leads, setLeads] = useState<Lead[]>(MOCK_LEADS);
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(new Set());
   
   // Onboarding State
@@ -69,14 +66,16 @@ const App: React.FC = () => {
   // Scraper State
   const [scrapeCategory, setScrapeCategory] = useState('');
   const [scrapeLocation, setScrapeLocation] = useState('');
+  const [scrapeLocationHints, setScrapeLocationHints] = useState('');
   const [scrapeMode, setScrapeMode] = useState<'fast' | 'deep' | 'extreme'>('fast');
   const [isScraping, setIsScraping] = useState(false);
+  const [isLocating, setIsLocating] = useState(false); // State for geolocation/lookup
   const [scrapeError, setScrapeError] = useState<string | null>(null);
   
   // New States for History and Load More
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
-  const [sessionStats, setSessionStats] = useState({ totalGenerated: MOCK_LEADS.length, totalContacted: 1 });
-  const [lastScrapeParams, setLastScrapeParams] = useState<{category: string, location: string} | null>(null);
+  const [sessionStats, setSessionStats] = useState({ totalGenerated: 0, totalContacted: 0 });
+  const [lastScrapeParams, setLastScrapeParams] = useState<{category: string, location: string, locationHints: string} | null>(null);
 
   // Sorting State
   const [sortConfig, setSortConfig] = useState<{key: SortKey, direction: SortDirection}>({ key: 'name', direction: 'asc' });
@@ -119,6 +118,54 @@ const App: React.FC = () => {
 
   // --- ACTIONS ---
 
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
+      return;
+    }
+    
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      try {
+        const { latitude, longitude } = position.coords;
+        // Use Gemini to reverse geocode
+        if (!hasApiKey()) {
+          setScrapeLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+        } else {
+          const address = await reverseGeocode(latitude, longitude);
+          setScrapeLocation(address);
+        }
+      } catch (error) {
+        console.error(error);
+        alert("Failed to retrieve location details.");
+      } finally {
+        setIsLocating(false);
+      }
+    }, (error) => {
+      console.error(error);
+      alert("Unable to retrieve your location. Please check browser permissions.");
+      setIsLocating(false);
+    });
+  };
+
+  const handleLookupLocation = async () => {
+    if (!scrapeLocation.trim()) return;
+    if (!hasApiKey()) {
+      alert("API Key required for location lookup.");
+      return;
+    }
+    
+    setIsLocating(true);
+    try {
+      const refined = await lookupLocation(scrapeLocation);
+      setScrapeLocation(refined);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLocating(false);
+    }
+  };
+
   const performScrape = async (append: boolean) => {
     if (!hasApiKey()) {
       setScrapeError("API Key missing. Please configure process.env.API_KEY.");
@@ -137,7 +184,7 @@ const App: React.FC = () => {
           .map(l => l.name);
       }
 
-      const results = await searchBusinesses(scrapeCategory, scrapeLocation, scrapeMode, excludedNames);
+      const results = await searchBusinesses(scrapeCategory, scrapeLocation, scrapeMode, scrapeLocationHints, excludedNames);
       
       // Filter out client-side duplicates just in case
       const existingIds = new Set(leads.map(l => l.name.toLowerCase() + l.address.toLowerCase()));
@@ -160,7 +207,7 @@ const App: React.FC = () => {
         timestamp: new Date()
       };
       setSearchHistory(prev => [historyItem, ...prev]);
-      setLastScrapeParams({ category: scrapeCategory, location: scrapeLocation });
+      setLastScrapeParams({ category: scrapeCategory, location: scrapeLocation, locationHints: scrapeLocationHints });
 
       if (uniqueResults.length === 0) {
         setScrapeError("No new unique results found.");
@@ -556,27 +603,69 @@ const App: React.FC = () => {
         <form onSubmit={handleScrape} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Business Keyword</label>
+              <label className="text-sm font-medium text-gray-700">Business Keywords or Search Term</label>
               <input 
                 type="text" 
-                placeholder="e.g. Dentists, Marketing Agencies, Cafes" 
+                placeholder="e.g. Dentists, Pizza & Pasta, or 'Best places for remote work'" 
                 className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
                 value={scrapeCategory}
                 onChange={(e) => setScrapeCategory(e.target.value)}
                 required
               />
+              <p className="text-xs text-gray-400 mt-1">You can enter multiple categories (comma separated) or a descriptive phrase.</p>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 relative">
               <label className="text-sm font-medium text-gray-700">Target Location</label>
-              <input 
-                type="text" 
-                placeholder="e.g. Downtown Los Angeles, CA" 
-                className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
-                value={scrapeLocation}
-                onChange={(e) => setScrapeLocation(e.target.value)}
-                required
-              />
+              <div className="relative">
+                <input 
+                  type="text" 
+                  placeholder="e.g. Downtown Los Angeles, CA" 
+                  className="w-full p-3 pr-24 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+                  value={scrapeLocation}
+                  onChange={(e) => setScrapeLocation(e.target.value)}
+                  required
+                />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                   {isLocating ? (
+                     <div className="p-2 text-indigo-500"><Loader2 className="animate-spin" size={18} /></div>
+                   ) : (
+                     <>
+                        <button 
+                          type="button" 
+                          onClick={handleUseCurrentLocation}
+                          className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition"
+                          title="Use Current Location"
+                        >
+                          <Locate size={18} />
+                        </button>
+                        <button 
+                          type="button" 
+                          onClick={handleLookupLocation}
+                          className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition"
+                          title="Verify/Refine Location"
+                        >
+                          <Search size={18} />
+                        </button>
+                     </>
+                   )}
+                </div>
+              </div>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+              <Map size={14} className="text-gray-400" />
+              Location Hints (Optional)
+            </label>
+            <input 
+              type="text" 
+              placeholder="e.g. Near the train station, North district, Within 5km radius" 
+              className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+              value={scrapeLocationHints}
+              onChange={(e) => setScrapeLocationHints(e.target.value)}
+            />
+            <p className="text-xs text-gray-400">Provide specific areas, landmarks, or streets to refine the search area.</p>
           </div>
           
           <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
@@ -592,7 +681,7 @@ const App: React.FC = () => {
                   <Zap size={24} />
                 </div>
                 <div className="font-bold text-gray-900">Fast Scan</div>
-                <div className="text-xs text-gray-500 mt-1">~10 Results</div>
+                <div className="text-xs text-gray-500 mt-1">Up to 10</div>
               </label>
               
               {/* DEEP */}
@@ -604,7 +693,7 @@ const App: React.FC = () => {
                   <Layers size={24} />
                 </div>
                 <div className="font-bold text-gray-900">Deep Scan</div>
-                <div className="text-xs text-gray-500 mt-1">50-99 Results</div>
+                <div className="text-xs text-gray-500 mt-1">Up to 100</div>
               </label>
 
               {/* EXTREME */}
@@ -616,7 +705,7 @@ const App: React.FC = () => {
                   <Flame size={24} />
                 </div>
                 <div className="font-bold text-gray-900">Extreme Scan</div>
-                <div className="text-xs text-gray-500 mt-1">200-500 Results</div>
+                <div className="text-xs text-gray-500 mt-1">Up to 500</div>
               </label>
 
             </div>
@@ -1232,16 +1321,55 @@ const App: React.FC = () => {
     );
   };
 
+  // --- NAVIGATION HELPER ---
+  const getNextStep = () => {
+    switch (view) {
+      case 'dashboard': return { id: 'scraper', label: 'Find Leads', icon: Search };
+      case 'scraper': return { id: 'leads', label: 'View Leads', icon: Users };
+      case 'leads': return { id: 'campaigns', label: 'Create Campaign', icon: Sparkles };
+      case 'campaigns': return { id: 'whatsapp', label: 'Send Messages', icon: MessageCircle };
+      case 'whatsapp': return { id: 'dashboard', label: 'Back Home', icon: LayoutDashboard };
+      default: return null;
+    }
+  };
+  
+  const nextStep = getNextStep();
+  
+  const handleNextStep = () => {
+    if (nextStep) {
+      setView(nextStep.id as ViewState);
+      // Close sidebar on mobile if navigating
+      setIsSidebarOpen(false);
+      // Scroll to top
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   // --- MAIN RENDER ---
   return (
     <div className="flex min-h-screen bg-gray-50 relative">
       
-      {/* Watermark */}
-      <div className="fixed bottom-2 right-2 z-40 pointer-events-none opacity-40 hover:opacity-100 transition-opacity select-none">
+      {/* Watermark - Moved to Left */}
+      <div className="fixed bottom-2 left-2 z-40 pointer-events-none opacity-40 hover:opacity-100 transition-opacity select-none hidden lg:block">
         <span className="text-[10px] font-medium text-slate-500 bg-white/50 backdrop-blur-[2px] px-2 py-1 rounded-md border border-slate-100/50">
           Made with ❤️ by Sardar Toheed
         </span>
       </div>
+
+      {/* Floating Next Step Button */}
+      {nextStep && (
+        <div className="fixed bottom-6 right-6 z-40 animate-in slide-in-from-bottom-10 fade-in duration-500">
+          <button
+            onClick={handleNextStep}
+            className="bg-gray-900 hover:bg-indigo-600 text-white pl-5 pr-4 py-3 rounded-full shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex items-center gap-3 font-medium text-sm border border-white/10 group backdrop-blur-sm"
+          >
+            <span>{nextStep.label}</span>
+            <div className="bg-white/20 p-1.5 rounded-full group-hover:bg-white/30 transition-colors">
+               <ArrowRight size={16} />
+            </div>
+          </button>
+        </div>
+      )}
 
       {/* Modals */}
       {showOnboarding && <OnboardingModal onClose={handleCloseOnboarding} />}

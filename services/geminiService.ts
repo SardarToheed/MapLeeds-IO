@@ -22,6 +22,7 @@ export const searchBusinesses = async (
   category: string,
   location: string,
   mode: 'fast' | 'deep' | 'extreme' = 'fast',
+  locationHints: string = '',
   excludeNames: string[] = []
 ): Promise<Lead[]> => {
   const ai = getClient();
@@ -31,15 +32,15 @@ export const searchBusinesses = async (
 
   switch (mode) {
     case 'fast':
-      countInstruction = "Find about 10 distinct businesses. Provide a quick overview.";
+      countInstruction = "Find up to 10 distinct businesses. Provide a quick overview.";
       sourceLabel = "Fast Scrape";
       break;
     case 'deep':
-      countInstruction = "Perform a thorough search. Find between 50 and 99 distinct businesses. Dig deeper than just the top results. Ensure a good mix of established and new businesses.";
+      countInstruction = "Perform a thorough search. Find up to 100 distinct businesses. Dig deeper than just the top results. Ensure a good mix of established and new businesses.";
       sourceLabel = "Deep Scrape";
       break;
     case 'extreme':
-      countInstruction = "Perform an exhaustive, extreme deep search. List AS MANY results as possible (aim for 200 to 500 distinct businesses). Do not limit yourself to one page of results. Aggressively find phone numbers and emails. This is a high-volume data extraction request.";
+      countInstruction = "Perform an exhaustive, extreme deep search. Find up to 500 distinct businesses. List AS MANY results as possible. Do not limit yourself to one page of results. Aggressively find phone numbers and emails. This is a high-volume data extraction request.";
       sourceLabel = "Extreme Scrape";
       break;
   }
@@ -51,9 +52,14 @@ export const searchBusinesses = async (
 
   const prompt = `
     ${countInstruction}
-    Category: "${category}"
+    Search Query: "${category}"
     Location: "${location}"
+    ${locationHints ? `Specific Location Hints: "${locationHints}" (Use these to refine the search area or focus)` : ""}
     ${exclusionContext}
+    
+    Instruction: Find businesses based on the Search Query. 
+    - You may search for multiple types (e.g. "Gyms, Yoga Studios") or concepts (e.g. "Cozy reading spots").
+    - Ensure results are relevant to the specific location.
     
     For each business, provide:
     1. Name
@@ -62,13 +68,14 @@ export const searchBusinesses = async (
     4. Website URL (if available)
     5. A plausible email address (if not found, generate a likely format like info@domain.com or leave empty)
     6. Rating (simulate a rating between 3.5 and 5.0 if not strictly available)
+    7. Specific Business Type (e.g. "Yoga Studio" vs "Gym")
     
     Return the data as a pure JSON array of objects. Do not wrap in markdown code blocks. 
-    The JSON keys must be: "name", "address", "phone", "email", "website", "rating".
+    The JSON keys must be: "name", "address", "phone", "email", "website", "rating", "type".
     
     Example format:
     [
-      { "name": "Example Dental", "address": "123 Main St", "phone": "+1 555-0102", "email": "contact@exampledental.com", "website": "https://exampledental.com", "rating": 4.5 }
+      { "name": "Example Dental", "address": "123 Main St", "phone": "+1 555-0102", "email": "contact@exampledental.com", "website": "https://exampledental.com", "rating": 4.5, "type": "Cosmetic Dentist" }
     ]
   `;
 
@@ -100,7 +107,7 @@ export const searchBusinesses = async (
     const leads: Lead[] = parsedData.map((item: any, index: number) => ({
       id: `lead-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       name: item.name || "Unknown Business",
-      category: category,
+      category: item.type || category, // Use specific type if available, fallback to search term
       address: item.address || location,
       phone: item.phone || "N/A",
       email: item.email || "",
@@ -115,6 +122,50 @@ export const searchBusinesses = async (
   } catch (error) {
     console.error("Gemini API Error:", error);
     throw error;
+  }
+};
+
+/**
+ * Validates/Refines a location string using Gemini + Google Maps.
+ */
+export const lookupLocation = async (query: string): Promise<string> => {
+  const ai = getClient();
+  const prompt = `Use Google Maps to find the location matching: "${query}". Return ONLY the formatted address or standard name of the place (e.g. "Downtown Dubai, UAE"). Do not include any other text.`;
+  
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        tools: [{ googleMaps: {} }],
+      },
+    });
+    return response.text?.trim() || query;
+  } catch (e) {
+    console.warn("Location lookup failed, returning original", e);
+    return query;
+  }
+};
+
+/**
+ * Reverse geocodes coordinates to a location name.
+ */
+export const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
+  const ai = getClient();
+  const prompt = `What city/area is at coordinates ${lat}, ${lng}? Return ONLY the "City, Region, Country" string.`;
+  
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        tools: [{ googleMaps: {} }],
+      },
+    });
+    return response.text?.trim() || `${lat}, ${lng}`;
+  } catch (e) {
+    console.warn("Reverse geocode failed", e);
+    return `${lat}, ${lng}`;
   }
 };
 
