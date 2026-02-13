@@ -53,6 +53,10 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, B
 type SortKey = 'name' | 'rating' | 'status' | 'address';
 type SortDirection = 'asc' | 'desc';
 
+// Cache Constants
+const CACHE_PREFIX = 'mapleads_cache_';
+const CACHE_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 Days in Milliseconds
+
 const App: React.FC = () => {
   // --- STATE ---
   const [view, setView] = useState<ViewState>('dashboard');
@@ -62,6 +66,7 @@ const App: React.FC = () => {
   
   // Onboarding State
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showCacheExpiryModal, setShowCacheExpiryModal] = useState(false);
   
   // Scraper State
   const [scrapeCategory, setScrapeCategory] = useState('');
@@ -97,6 +102,9 @@ const App: React.FC = () => {
   const [bulkQueue, setBulkQueue] = useState<Lead[]>([]);
   const [currentBulkIndex, setCurrentBulkIndex] = useState(0);
 
+  // Persistence State
+  const [isHydrated, setIsHydrated] = useState(false);
+
   // Stats
   const totalLeads = leads.length;
   const newLeads = leads.filter(l => l.status === 'New').length;
@@ -104,17 +112,129 @@ const App: React.FC = () => {
   const whatsappReady = leads.filter(l => validateWhatsAppNumber(l.phone)).length;
 
   // --- EFFECTS ---
+
+  // 1. Hydration & Cache Expiry Check (Runs Once on Mount)
   useEffect(() => {
-    const hasSeenOnboarding = localStorage.getItem('mapleads_onboarding_seen');
-    if (!hasSeenOnboarding) {
-      setShowOnboarding(true);
-    }
+    const initializeData = () => {
+      try {
+        console.log("Initializing data...");
+        // 1. Always load stored data first (Optimistic Hydration)
+        const storedLeads = localStorage.getItem(`${CACHE_PREFIX}leads`);
+        if (storedLeads) setLeads(JSON.parse(storedLeads));
+
+        const storedStats = localStorage.getItem(`${CACHE_PREFIX}stats`);
+        if (storedStats) setSessionStats(JSON.parse(storedStats));
+
+        const storedHistory = localStorage.getItem(`${CACHE_PREFIX}history`);
+        if (storedHistory) {
+          const parsedHistory = JSON.parse(storedHistory).map((item: any) => ({
+            ...item,
+            timestamp: new Date(item.timestamp) // Rehydrate Date object
+          }));
+          setSearchHistory(parsedHistory);
+        }
+
+        const storedCampaigns = localStorage.getItem(`${CACHE_PREFIX}campaigns`);
+        if (storedCampaigns) {
+          const parsedCampaigns = JSON.parse(storedCampaigns).map((item: any) => ({
+            ...item,
+            createdAt: new Date(item.createdAt) // Rehydrate Date object
+          }));
+          setCampaigns(parsedCampaigns);
+        }
+
+        // 2. Check Onboarding
+        const hasSeenOnboarding = localStorage.getItem('mapleads_onboarding_seen');
+        if (!hasSeenOnboarding) setShowOnboarding(true);
+
+        // 3. Check Cache Expiry
+        const cacheStartStr = localStorage.getItem(`${CACHE_PREFIX}timestamp`);
+        const now = Date.now();
+        const cacheStart = cacheStartStr ? parseInt(cacheStartStr, 10) : null;
+
+        if (!cacheStart) {
+          // First run or cleaned - set timestamp
+          localStorage.setItem(`${CACHE_PREFIX}timestamp`, now.toString());
+        } else if (now - cacheStart > CACHE_DURATION_MS) {
+          // Expired
+          const hasData = storedLeads || storedHistory || storedCampaigns;
+          
+          if (hasData) {
+            // Ask user what to do
+            setShowCacheExpiryModal(true);
+          } else {
+            // No data to save, just reset timestamp
+            localStorage.setItem(`${CACHE_PREFIX}timestamp`, now.toString());
+          }
+        }
+
+      } catch (e) {
+        console.error("Failed to hydrate cache:", e);
+        // Fallback to fresh start if corruption occurs
+        localStorage.setItem(`${CACHE_PREFIX}timestamp`, Date.now().toString());
+      } finally {
+        setIsHydrated(true);
+      }
+    };
+
+    initializeData();
   }, []);
 
   const handleCloseOnboarding = () => {
     localStorage.setItem('mapleads_onboarding_seen', 'true');
     setShowOnboarding(false);
   };
+
+  const handleKeepData = () => {
+    localStorage.setItem(`${CACHE_PREFIX}timestamp`, Date.now().toString());
+    setShowCacheExpiryModal(false);
+  };
+
+  const handleClearData = () => {
+    // Clear State
+    setLeads([]);
+    setSearchHistory([]);
+    setCampaigns([]);
+    setSessionStats({ totalGenerated: 0, totalContacted: 0 });
+    setLastScrapeParams(null);
+    
+    // Clear Storage explicitly (Persistence effects will sync empty state, but good to be sure)
+    localStorage.removeItem(`${CACHE_PREFIX}leads`);
+    localStorage.removeItem(`${CACHE_PREFIX}history`);
+    localStorage.removeItem(`${CACHE_PREFIX}campaigns`);
+    localStorage.removeItem(`${CACHE_PREFIX}stats`);
+    
+    // Reset Timestamp
+    localStorage.setItem(`${CACHE_PREFIX}timestamp`, Date.now().toString());
+    
+    setShowCacheExpiryModal(false);
+  };
+
+  // 2. Persistence Effects (Run when data changes, only after hydration)
+  useEffect(() => {
+    if (isHydrated) {
+      localStorage.setItem(`${CACHE_PREFIX}leads`, JSON.stringify(leads));
+    }
+  }, [leads, isHydrated]);
+
+  useEffect(() => {
+    if (isHydrated) {
+      localStorage.setItem(`${CACHE_PREFIX}history`, JSON.stringify(searchHistory));
+    }
+  }, [searchHistory, isHydrated]);
+
+  useEffect(() => {
+    if (isHydrated) {
+      localStorage.setItem(`${CACHE_PREFIX}campaigns`, JSON.stringify(campaigns));
+    }
+  }, [campaigns, isHydrated]);
+
+  useEffect(() => {
+    if (isHydrated) {
+      localStorage.setItem(`${CACHE_PREFIX}stats`, JSON.stringify(sessionStats));
+    }
+  }, [sessionStats, isHydrated]);
+
 
   // --- ACTIONS ---
 
@@ -1321,6 +1441,41 @@ const App: React.FC = () => {
     );
   };
 
+  const renderCacheExpiryModal = () => {
+    if (!showCacheExpiryModal) return null;
+    
+    return (
+      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 text-center animate-in zoom-in-95 border border-gray-100">
+              <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4 text-amber-600">
+                  <History size={32} />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Weekly Data Cleanup</h3>
+              <p className="text-gray-500 mb-6 text-sm">
+                  It's been 7 days since your last cleanup. To keep the app fast, we recommend clearing old data. 
+                  <br/><br/>
+                  <strong className="text-gray-700">Do you want to keep your current leads and history?</strong>
+              </p>
+              
+              <div className="flex flex-col gap-3">
+                  <button 
+                      onClick={handleKeepData}
+                      className="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition flex items-center justify-center gap-2"
+                  >
+                      <CheckCircle size={20} /> Keep Data (Extend 7 Days)
+                  </button>
+                  <button 
+                      onClick={handleClearData}
+                      className="w-full py-3 bg-white border-2 border-gray-200 text-gray-600 font-bold rounded-xl hover:bg-gray-50 hover:text-red-600 hover:border-red-100 transition flex items-center justify-center gap-2"
+                  >
+                      <Trash2 size={20} /> Clear Data & Start Fresh
+                  </button>
+              </div>
+          </div>
+      </div>
+    );
+  }
+
   // --- NAVIGATION HELPER ---
   const getNextStep = () => {
     switch (view) {
@@ -1373,6 +1528,7 @@ const App: React.FC = () => {
 
       {/* Modals */}
       {showOnboarding && <OnboardingModal onClose={handleCloseOnboarding} />}
+      {showCacheExpiryModal && renderCacheExpiryModal()}
       {renderBulkSessionModal()}
 
       {/* Mobile Sidebar Overlay */}
