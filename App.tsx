@@ -39,6 +39,7 @@ import {
   ChevronRight,
   MoreHorizontal
 } from 'lucide-react';
+import { Analytics } from '@vercel/analytics/react';
 import { StatsCard } from './components/StatsCard';
 import { OnboardingModal } from './components/OnboardingModal';
 import { searchBusinesses, generateEmailContent, hasApiKey, validateWhatsAppNumber } from './services/geminiService';
@@ -1336,6 +1337,7 @@ const App: React.FC = () => {
           </div>
         </div>
       </main>
+      <Analytics />
     </div>
   );
 };
