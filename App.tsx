@@ -118,6 +118,7 @@ const App: React.FC = () => {
   // WhatsApp State
   const [waMessage, setWaMessage] = useState('');
   const [waImage, setWaImage] = useState<File | null>(null);
+  const [waImagePreview, setWaImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Bulk Session State
@@ -274,6 +275,17 @@ const App: React.FC = () => {
       localStorage.setItem(`${CACHE_PREFIX}stats`, JSON.stringify(sessionStats));
     }
   }, [sessionStats, isHydrated]);
+
+  // Image Preview Effect
+  useEffect(() => {
+    if (waImage) {
+      const url = URL.createObjectURL(waImage);
+      setWaImagePreview(url);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setWaImagePreview(null);
+    }
+  }, [waImage]);
 
 
   // --- ACTIONS ---
@@ -858,6 +870,29 @@ const App: React.FC = () => {
              </div>
           </div>
 
+          {/* Scan Depth - Visible Default */}
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-textSec uppercase flex items-center gap-1">
+               <Layers size={14} /> Scan Depth
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {['fast', 'deep', 'extreme'].map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setScrapeMode(m as any)}
+                  className={`py-3 rounded-lg text-sm font-medium capitalize border transition-all duration-200
+                    ${scrapeMode === m 
+                      ? 'bg-blue-50 border-googleBlue text-googleBlue shadow-sm' 
+                      : 'bg-white border-gray-200 text-textSec hover:bg-gray-50'}
+                  `}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="pt-2">
             <button 
               type="button"
@@ -879,25 +914,6 @@ const App: React.FC = () => {
                     value={scrapeLocationHints}
                     onChange={(e) => setScrapeLocationHints(e.target.value)}
                   />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-textSec uppercase">Scan Depth</label>
-                  <div className="flex gap-2">
-                    {['fast', 'deep', 'extreme'].map((m) => (
-                      <button
-                        key={m}
-                        type="button"
-                        onClick={() => setScrapeMode(m as any)}
-                        className={`flex-1 py-2 rounded-lg text-sm font-medium capitalize border transition-colors
-                          ${scrapeMode === m 
-                            ? 'bg-blue-50 border-googleBlue text-googleBlue' 
-                            : 'bg-white border-gray-200 text-textSec hover:bg-gray-50'}
-                        `}
-                      >
-                        {m}
-                      </button>
-                    ))}
-                  </div>
                 </div>
             </div>
           </div>
@@ -1202,6 +1218,26 @@ const App: React.FC = () => {
                   value={waMessage}
                   onChange={(e) => setWaMessage(e.target.value)}
                 />
+
+                {/* Image Preview */}
+                {waImagePreview && (
+                  <div className="mb-4 relative bg-gray-50 rounded-lg border border-gray-100 overflow-hidden group">
+                    <img src={waImagePreview} alt="Attachment" className="w-full h-40 object-cover bg-gray-50" />
+                    <button 
+                      onClick={() => {
+                        setWaImage(null);
+                        if (fileInputRef.current) fileInputRef.current.value = '';
+                      }}
+                      className="absolute top-2 right-2 p-1 bg-white text-gray-500 rounded-full shadow-md hover:text-red-500 transition opacity-0 group-hover:opacity-100"
+                      title="Remove image"
+                    >
+                      <X size={14} />
+                    </button>
+                    <div className="absolute bottom-0 inset-x-0 bg-black/50 text-white text-[10px] p-1 truncate px-2">
+                        {waImage?.name}
+                    </div>
+                  </div>
+                )}
                 
                 <div className="space-y-3">
                     <div className="flex items-center gap-2">
@@ -1219,11 +1255,13 @@ const App: React.FC = () => {
                         >
                             <Paperclip size={20} />
                         </button>
-                        {waImage && (
+                        
+                        {!waImagePreview && waImage && (
                             <span className="text-xs text-textSec bg-gray-100 px-2 py-1 rounded truncate max-w-[150px]">
                                 {waImage.name}
                             </span>
                         )}
+                        {!waImage && <span className="text-xs text-gray-400 italic ml-1">No image attached</span>}
                     </div>
 
                     <button 

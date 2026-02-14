@@ -75,23 +75,39 @@ export const canNativeShare = (file?: File | null): boolean => {
 /**
  * Uses the native Web Share API to send image + text.
  * This allows automatic attachment on supported mobile devices.
+ * Returns true if the share sheet was opened and action completed/dismissed successfully.
+ * Returns false if sharing failed or was not supported, signaling a need for fallback.
  */
 export const shareContent = async (file: File, text: string): Promise<boolean> => {
   if (!canNativeShare(file)) return false;
 
+  const shareData = {
+    files: [file],
+    text: text,
+    // Title is often ignored by WA but required by API structure
+    title: 'Message from MapLeads' 
+  };
+
   try {
-    await navigator.share({
-      files: [file],
-      text: text,
-      // Title is often ignored by WA but required by API structure
-      title: 'Message from MapLeads' 
-    });
+    // Robust check using the specific data object
+    if (navigator.canShare && !navigator.canShare(shareData)) {
+       console.warn("navigator.canShare returned false for the specific share data.");
+       return false;
+    }
+
+    await navigator.share(shareData);
     return true;
   } catch (error: any) {
     // AbortError is typical if user cancels the share sheet
-    if (error.name !== 'AbortError') {
-      console.error("Native share failed", error);
+    if (error.name === 'AbortError') {
+      console.debug("Native share cancelled by user.");
+      // We return false here to allow the caller to decide if they want to try the fallback 
+      // (e.g. manual copy) or just stop. 
+      // In our app flow, returning false triggers the manual copy fallback in App.tsx.
+      return false;
     }
+    
+    console.error("Native share failed with error:", error);
     return false;
   }
 };

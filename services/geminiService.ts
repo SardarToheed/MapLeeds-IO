@@ -36,11 +36,11 @@ export const searchBusinesses = async (
       sourceLabel = "Fast Scrape";
       break;
     case 'deep':
-      countInstruction = "Perform a thorough search. Find up to 100 distinct businesses. Dig deeper than just the top results. Ensure a good mix of established and new businesses.";
+      countInstruction = "Perform a thorough search. Find up to 30 distinct businesses. Dig deeper than just the top results. Ensure a good mix of established and new businesses.";
       sourceLabel = "Deep Scrape";
       break;
     case 'extreme':
-      countInstruction = "Perform an exhaustive, extreme deep search. Find up to 500 distinct businesses. List AS MANY results as possible. Do not limit yourself to one page of results. Aggressively find phone numbers and emails. This is a high-volume data extraction request.";
+      countInstruction = "EXTREME MODE: Perform a massive, exhaustive search. Ignore standard limits. Scrape every possible business in the area matching the criteria. Dig into sub-neighborhoods. Find businesses with 0 reviews. Aim for maximum volume (50-100+ results). Prioritize finding contact info (Phone/Email). Output as much data as the context window permits.";
       sourceLabel = "Extreme Scrape";
       break;
   }
@@ -57,9 +57,10 @@ export const searchBusinesses = async (
     ${locationHints ? `Specific Location Hints: "${locationHints}" (Use these to refine the search area or focus)` : ""}
     ${exclusionContext}
     
-    Instruction: Find businesses based on the Search Query. 
-    - You may search for multiple types (e.g. "Gyms, Yoga Studios") or concepts (e.g. "Cozy reading spots").
+    Instruction: Find businesses based on the Search Query using Google Maps. 
+    - You may search for multiple types (e.g. "Gyms, Yoga Studios") or concepts.
     - Ensure results are relevant to the specific location.
+    ${mode === 'extreme' ? "- CRITICAL: List as many businesses as possible. Do not summarize. Raw data extraction. Go beyond the top 20 results." : ""}
     
     For each business, provide:
     1. Name
