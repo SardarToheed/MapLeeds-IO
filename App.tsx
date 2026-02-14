@@ -46,6 +46,9 @@ import {
 } from 'lucide-react';
 import { StatsCard } from './components/StatsCard';
 import { OnboardingModal } from './components/OnboardingModal';
+import { Toast, ToastType } from './components/Toast';
+import { ConfirmationModal } from './components/ConfirmationModal';
+import { CustomSelect } from './components/CustomSelect';
 import { searchBusinesses, generateEmailContent, hasApiKey, validateWhatsAppNumber, lookupLocation, reverseGeocode } from './services/geminiService';
 import { generateWhatsAppLink, openWhatsAppTab, isMobileDevice, copyImageToClipboard, canNativeShare, shareContent } from './services/whatsappService';
 import { Lead, Campaign, ViewState, SearchHistoryItem } from './types';
@@ -65,6 +68,25 @@ const App: React.FC = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(new Set());
   
+  // Toast State
+  const [toasts, setToasts] = useState<Array<{id: string, message: string, type: ToastType}>>([]);
+  
+  // Confirmation Modal State
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    isDanger?: boolean;
+    confirmLabel?: string;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    isDanger: false
+  });
+
   // Onboarding State
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showCacheExpiryModal, setShowCacheExpiryModal] = useState(false);
@@ -111,6 +133,21 @@ const App: React.FC = () => {
   const newLeads = leads.filter(l => l.status === 'New').length;
   const contactedLeads = leads.filter(l => l.status === 'Contacted').length;
   const whatsappReady = leads.filter(l => validateWhatsAppNumber(l.phone)).length;
+
+  // --- ACTIONS: TOAST ---
+  const showToast = (message: string, type: ToastType = 'info') => {
+    const id = Date.now().toString() + Math.random().toString().slice(2,5);
+    setToasts(prev => [...prev, { id, message, type }]);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  };
+
+  // --- ACTIONS: MODAL ---
+  const closeConfirmModal = () => {
+    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+  };
 
   // --- EFFECTS ---
 
@@ -189,6 +226,7 @@ const App: React.FC = () => {
   const handleKeepData = () => {
     localStorage.setItem(`${CACHE_PREFIX}timestamp`, Date.now().toString());
     setShowCacheExpiryModal(false);
+    showToast("Data retention extended for 7 days.", "success");
   };
 
   const handleClearData = () => {
@@ -209,6 +247,7 @@ const App: React.FC = () => {
     localStorage.setItem(`${CACHE_PREFIX}timestamp`, Date.now().toString());
     
     setShowCacheExpiryModal(false);
+    showToast("All data has been cleared.", "info");
   };
 
   // 2. Persistence Effects (Run when data changes, only after hydration)
@@ -241,7 +280,7 @@ const App: React.FC = () => {
 
   const handleUseCurrentLocation = () => {
     if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser");
+      showToast("Geolocation is not supported by your browser", "error");
       return;
     }
     
@@ -256,15 +295,16 @@ const App: React.FC = () => {
           const address = await reverseGeocode(latitude, longitude);
           setScrapeLocation(address);
         }
+        showToast("Location updated!", "success");
       } catch (error) {
         console.error(error);
-        alert("Failed to retrieve location details.");
+        showToast("Failed to retrieve location details.", "error");
       } finally {
         setIsLocating(false);
       }
     }, (error) => {
       console.error(error);
-      alert("Unable to retrieve your location. Please check browser permissions.");
+      showToast("Unable to retrieve your location. Check permissions.", "error");
       setIsLocating(false);
     });
   };
@@ -272,7 +312,7 @@ const App: React.FC = () => {
   const handleLookupLocation = async () => {
     if (!scrapeLocation.trim()) return;
     if (!hasApiKey()) {
-      alert("API Key required for location lookup.");
+      showToast("API Key required for location lookup.", "warning");
       return;
     }
     
@@ -280,8 +320,10 @@ const App: React.FC = () => {
     try {
       const refined = await lookupLocation(scrapeLocation);
       setScrapeLocation(refined);
+      showToast("Location verified and refined.", "success");
     } catch (e) {
       console.error(e);
+      showToast("Could not verify location.", "warning");
     } finally {
       setIsLocating(false);
     }
@@ -290,6 +332,7 @@ const App: React.FC = () => {
   const performScrape = async (append: boolean) => {
     if (!hasApiKey()) {
       setScrapeError("API Key missing. Please configure process.env.API_KEY.");
+      showToast("API Key missing", "error");
       return;
     }
     
@@ -332,11 +375,14 @@ const App: React.FC = () => {
 
       if (uniqueResults.length === 0) {
         setScrapeError("No new unique results found.");
+        showToast("No new results found.", "info");
       } else {
+        showToast(`Found ${uniqueResults.length} new leads!`, "success");
         if (!append) setView('leads'); // Redirect to leads view on fresh search
       }
     } catch (err: any) {
       setScrapeError("Failed to scrape. Please try again later. " + err.message);
+      showToast("Scraping failed. See error details.", "error");
     } finally {
       setIsScraping(false);
     }
@@ -358,9 +404,10 @@ const App: React.FC = () => {
     try {
       const content = await generateEmailContent(emailTopic, emailTone);
       setGeneratedEmail(content);
+      showToast("Campaign draft generated!", "success");
     } catch (err) {
       console.error(err);
-      alert("Failed to generate email content");
+      showToast("Failed to generate content.", "error");
     } finally {
       setIsGeneratingEmail(false);
     }
@@ -381,13 +428,14 @@ const App: React.FC = () => {
     setWaMessage(fullMessage);
     setView('whatsapp');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    showToast("Content copied to WhatsApp composer.", "info");
   };
 
   const saveCampaign = () => {
     if (!generatedEmail) return;
     const newCampaign: Campaign = {
       id: Date.now().toString(),
-      name: `Campaign: ${emailTopic.substring(0, 20)}...`,
+      name: `Campaign: ${emailTopic.substring(0, 20) || 'Untitled'}...`,
       subject: generatedEmail.subject,
       content: generatedEmail.body,
       status: 'Draft',
@@ -396,9 +444,41 @@ const App: React.FC = () => {
       createdAt: new Date()
     };
     setCampaigns([newCampaign, ...campaigns]);
-    setGeneratedEmail(null);
-    setEmailTopic('');
-    alert("Campaign saved to drafts!");
+    showToast("Campaign saved to drafts!", "success");
+  };
+
+  const deleteCampaign = (id: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Delete Campaign',
+      message: 'Are you sure you want to delete this campaign? This action cannot be undone.',
+      isDanger: true,
+      confirmLabel: 'Delete',
+      onConfirm: () => {
+        setCampaigns(prev => prev.filter(c => c.id !== id));
+        showToast("Campaign deleted.", "info");
+        closeConfirmModal();
+      }
+    });
+  };
+
+  const loadCampaign = (campaign: Campaign) => {
+    setGeneratedEmail({
+      subject: campaign.subject,
+      body: campaign.content
+    });
+    // Try to extract topic from name if possible, or just set generic
+    const topicMatch = campaign.name.match(/Campaign: (.*)\.\.\./);
+    if (topicMatch) {
+       setEmailTopic(topicMatch[1]);
+    }
+    
+    showToast("Campaign loaded!", "success");
+    // Scroll to editor on mobile
+    if (window.innerWidth < 1024) {
+        const editor = document.getElementById('campaign-editor');
+        if (editor) editor.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   // --- WHATSAPP ACTIONS ---
@@ -407,7 +487,7 @@ const App: React.FC = () => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       if (!file.type.startsWith('image/')) {
-        alert("Please select a valid image file.");
+        showToast("Please select a valid image file.", "warning");
         return;
       }
       setWaImage(file);
@@ -430,13 +510,13 @@ const App: React.FC = () => {
      openWhatsAppTab(phone, text);
 
      if (file && !imageCopied) {
-       alert("Could not auto-copy image. Please attach manually in WhatsApp.");
+       showToast("Image not auto-copied. Attach manually.", "warning");
      }
   };
 
   const handleSendSingleWhatsApp = async (lead: Lead) => {
     if (!waMessage.trim()) {
-      alert("Please enter a message first.");
+      showToast("Please enter a message first.", "warning");
       return;
     }
     
@@ -452,11 +532,11 @@ const App: React.FC = () => {
   const startBulkSession = () => {
     const validLeads = leads.filter(l => validateWhatsAppNumber(l.phone));
     if (validLeads.length === 0) {
-      alert("No valid WhatsApp numbers found.");
+      showToast("No valid WhatsApp numbers found.", "error");
       return;
     }
     if (!waMessage.trim()) {
-      alert("Please enter a message first.");
+      showToast("Please enter a message first.", "warning");
       return;
     }
 
@@ -479,10 +559,10 @@ const App: React.FC = () => {
     if (currentBulkIndex < bulkQueue.length - 1) {
       setCurrentBulkIndex(currentBulkIndex + 1);
     } else {
-      alert("Session Complete!");
       setIsBulkSending(false);
       setBulkQueue([]);
       setCurrentBulkIndex(0);
+      showToast("Session Complete!", "success");
     }
   };
 
@@ -494,7 +574,7 @@ const App: React.FC = () => {
   const exportWhatsAppList = () => {
     const validLeads = leads.filter(l => validateWhatsAppNumber(l.phone));
     if (validLeads.length === 0) {
-      alert("No valid WhatsApp numbers found.");
+      showToast("No valid WhatsApp numbers found.", "warning");
       return;
     }
     
@@ -509,6 +589,7 @@ const App: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    showToast("Export started!", "success");
   };
 
   // --- BULK ACTIONS ---
@@ -532,10 +613,19 @@ const App: React.FC = () => {
   };
 
   const handleBulkDelete = () => {
-    if (window.confirm(`Are you sure you want to delete ${selectedLeadIds.size} leads?`)) {
-      setLeads(prev => prev.filter(l => !selectedLeadIds.has(l.id)));
-      setSelectedLeadIds(new Set());
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: 'Delete Leads',
+      message: `Are you sure you want to delete ${selectedLeadIds.size} leads? This action cannot be undone.`,
+      isDanger: true,
+      confirmLabel: 'Delete All',
+      onConfirm: () => {
+        setLeads(prev => prev.filter(l => !selectedLeadIds.has(l.id)));
+        setSelectedLeadIds(new Set());
+        showToast("Leads deleted successfully.", "success");
+        closeConfirmModal();
+      }
+    });
   };
 
   const handleBulkStatusChange = (status: Lead['status']) => {
@@ -547,6 +637,7 @@ const App: React.FC = () => {
 
     setLeads(prev => prev.map(l => selectedLeadIds.has(l.id) ? { ...l, status } : l));
     setSelectedLeadIds(new Set());
+    showToast(`Status updated to ${status}`, "success");
   };
 
   const handleBulkExport = () => {
@@ -564,6 +655,7 @@ const App: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    showToast("Export downloaded!", "success");
   };
 
   // --- SORTING ---
@@ -949,9 +1041,9 @@ const App: React.FC = () => {
   };
 
   const renderCampaigns = () => (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8" id="campaign-editor">
       {/* Compose Section */}
-      <div className="bg-white p-8 rounded-xl shadow-card border border-transparent">
+      <div className="bg-white p-8 rounded-xl shadow-card border border-transparent flex flex-col">
         <h2 className="text-2xl font-normal text-textMain mb-6 flex items-center gap-2">
           <Sparkles size={24} className="text-googleBlue" /> 
           AI Campaign Writer
@@ -970,16 +1062,12 @@ const App: React.FC = () => {
           </div>
           <div className="space-y-2">
             <label className="text-xs font-bold text-textSec uppercase tracking-wide">Tone</label>
-            <select 
-              className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-googleBlue outline-none transition"
+            <CustomSelect 
               value={emailTone}
-              onChange={(e) => setEmailTone(e.target.value)}
-            >
-              <option>Professional</option>
-              <option>Friendly</option>
-              <option>Urgent</option>
-              <option>Persuasive</option>
-            </select>
+              onChange={setEmailTone}
+              options={['Professional', 'Friendly', 'Urgent', 'Persuasive']}
+              placeholder="Select Tone"
+            />
           </div>
           
           <button 
@@ -992,25 +1080,42 @@ const App: React.FC = () => {
         </div>
 
         {generatedEmail && (
-          <div className="mt-8 animate-fade-in">
+          <div className="mt-8 animate-fade-in" id="campaign-result">
             <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
-              <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 flex justify-between">
+              <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 flex justify-between items-center">
                 <span className="text-xs font-bold text-textSec uppercase">Preview</span>
+                <div className="flex gap-2">
+                   <button 
+                     onClick={() => setGeneratedEmail(null)}
+                     className="text-gray-400 hover:text-googleRed transition"
+                     title="Discard"
+                   >
+                     <X size={16} />
+                   </button>
+                </div>
               </div>
               <div className="p-4 space-y-3">
                 <input 
                   value={generatedEmail.subject} 
                   onChange={(e) => setGeneratedEmail({...generatedEmail, subject: e.target.value})}
-                  className="w-full font-bold text-lg text-textMain border-none focus:ring-0 p-0"
+                  className="w-full font-bold text-lg text-textMain border-none focus:ring-0 p-0 placeholder-gray-300"
+                  placeholder="Subject Line"
                 />
                 <textarea 
                   value={generatedEmail.body.replace(/<br>/g, '\n').replace(/<\/?[^>]+(>|$)/g, "")}
                   onChange={(e) => setGeneratedEmail({...generatedEmail, body: e.target.value})}
-                  className="w-full h-40 text-textSec text-sm resize-none border-none focus:ring-0 p-0"
+                  className="w-full h-40 text-textSec text-sm resize-none border-none focus:ring-0 p-0 placeholder-gray-300"
+                  placeholder="Email Body..."
                 />
               </div>
             </div>
             <div className="mt-4 flex flex-wrap justify-end gap-3">
+               <button 
+                onClick={saveCampaign}
+                className="px-4 py-2 bg-white border border-gray-200 text-textMain hover:bg-gray-50 rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-sm"
+               >
+                 <Check size={16} /> Save to History
+               </button>
                <button 
                 onClick={handleCopyToWhatsApp}
                 className="px-4 py-2 bg-waGreen text-white hover:bg-green-600 rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-sm"
@@ -1023,19 +1128,42 @@ const App: React.FC = () => {
       </div>
 
       {/* History List */}
-      <div className="bg-white p-6 rounded-xl shadow-card h-full border border-transparent">
-           <h2 className="text-xl font-normal text-textMain mb-6">Saved Campaigns</h2>
-           <div className="space-y-3">
+      <div className="bg-white p-6 rounded-xl shadow-card h-full border border-transparent flex flex-col">
+           <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-normal text-textMain">Saved Campaigns</h2>
+              <span className="bg-blue-50 text-googleBlue text-xs px-2 py-1 rounded-full">{campaigns.length}</span>
+           </div>
+           
+           <div className="space-y-3 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar">
              {campaigns.length > 0 ? campaigns.map(c => (
-               <div key={c.id} className="p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition cursor-pointer">
-                 <h3 className="font-medium text-textMain">{c.name}</h3>
-                 <div className="flex justify-between items-center mt-2">
-                    <span className="text-xs text-textSec">{c.createdAt.toLocaleDateString()}</span>
-                    <span className="bg-gray-100 text-gray-600 text-[10px] px-2 py-0.5 rounded border border-gray-200">{c.status}</span>
+               <div key={c.id} className="group p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition relative bg-white">
+                 <div className="pr-8 cursor-pointer" onClick={() => loadCampaign(c)}>
+                    <h3 className="font-medium text-textMain truncate">{c.name}</h3>
+                    <p className="text-xs text-textSec mt-1 line-clamp-2">{c.subject}</p>
                  </div>
+                 
+                 <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-50">
+                    <span className="text-[10px] text-gray-400">{c.createdAt.toLocaleDateString()}</span>
+                    <button 
+                      onClick={() => loadCampaign(c)}
+                      className="text-xs bg-blue-50 text-googleBlue hover:bg-blue-100 px-3 py-1.5 rounded-full font-medium transition"
+                    >
+                      Reuse
+                    </button>
+                 </div>
+
+                 <button 
+                   onClick={(e) => { e.stopPropagation(); deleteCampaign(c.id); }}
+                   className="absolute top-4 right-4 text-gray-300 hover:text-googleRed transition opacity-0 group-hover:opacity-100 p-1"
+                   title="Delete Campaign"
+                 >
+                   <Trash2 size={16} />
+                 </button>
                </div>
              )) : (
-               <div className="text-center py-10 text-gray-400 text-sm">No campaigns yet.</div>
+               <div className="text-center py-10 text-gray-400 text-sm border-2 border-dashed border-gray-100 rounded-xl">
+                 No campaigns saved yet.
+               </div>
              )}
            </div>
       </div>
@@ -1272,6 +1400,26 @@ const App: React.FC = () => {
           Made with ❤️ by Sardar Toheed
         </span>
       </div>
+
+      {/* Toast Container - Fixed Top Right */}
+      <div className="fixed top-5 right-5 z-[100] flex flex-col gap-3 w-full max-w-sm pointer-events-none">
+        {toasts.map(t => (
+          <div key={t.id} className="pointer-events-auto">
+            <Toast {...t} onClose={removeToast} />
+          </div>
+        ))}
+      </div>
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal 
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={closeConfirmModal}
+        isDanger={confirmModal.isDanger}
+        confirmLabel={confirmModal.confirmLabel}
+      />
 
       {/* FAB Next Step */}
       {nextStep && (
