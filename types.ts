@@ -22,12 +22,16 @@ export interface ScrapeParams {
 export interface Campaign {
   id: string;
   name: string;
+  platform: 'Email' | 'WhatsApp';
   subject: string;
-  content: string;
-  status: 'Draft' | 'Sent' | 'Scheduled';
-  sentCount: number;
-  openRate: number;
+  content: string; // HTML for Email, Markdown for WhatsApp
+  status: 'Draft' | 'In Progress' | 'Completed';
   createdAt: Date;
+  leads: Lead[]; // Snapshot of leads targeted
+  progress: {
+    sent: number;
+    total: number;
+  };
 }
 
 export interface SearchHistoryItem {
@@ -36,6 +40,7 @@ export interface SearchHistoryItem {
   location: string;
   resultsCount: number;
   timestamp: Date;
+  leads?: Lead[];
 }
 
 export type ViewState = 'dashboard' | 'scraper' | 'leads' | 'campaigns' | 'whatsapp';
