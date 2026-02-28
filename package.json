@@ -8,6 +8,10 @@
     "build": "vite build",
     "preview": "vite preview"
   },
+  "overrides": {
+    "react": "$react",
+    "react-dom": "$react-dom"
+  },
   "dependencies": {
     "@google/genai": "^1.41.0",
     "lucide-react": "^0.563.0",
