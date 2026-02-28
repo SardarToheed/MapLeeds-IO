@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { 
   LayoutDashboard, 
   MapPin, 
@@ -6,9 +6,9 @@ import {
   Mail, 
   MessageCircle, 
   Settings, 
-  Menu, 
   X,
   Plus,
+  Heart,
   Search,
   Download,
   Send,
@@ -47,10 +47,11 @@ import { OnboardingModal } from './components/OnboardingModal';
 import { Toast, ToastType } from './components/Toast';
 import { ConfirmationModal } from './components/ConfirmationModal';
 import { CustomSelect } from './components/CustomSelect';
+import Joyride, { CallBackProps, STATUS, Step } from 'react-joyride';
 import { searchBusinesses, generateEmailContent, hasApiKey, validateWhatsAppNumber, lookupLocation } from './services/geminiService';
 import { generateWhatsAppLink, openWhatsAppTab, isMobileDevice, shareContent, copyImageToClipboard } from './services/whatsappService';
 import { Lead, Campaign, ViewState, SearchHistoryItem } from './types';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 
 type SortKey = 'name' | 'rating' | 'status' | 'address';
 type SortDirection = 'asc' | 'desc';
@@ -58,10 +59,17 @@ type SortDirection = 'asc' | 'desc';
 // Cache Constants
 const CACHE_PREFIX = 'mapleads_cache_';
 
+const CATEGORIES = [
+  'Restaurants', 'Real Estate Agents', 'Dentists', 'Gyms', 'Plumbers', 
+  'Marketing Agencies', 'Coffee Shops', 'Lawyers', 'Accountants', 
+  'Electricians', 'Hair Salons', 'Car Repair', 'Hotels', 'Bakeries', 
+  'Florists', 'Photographers', 'Architects', 'Interior Designers',
+  'Software Companies', 'Consultants', 'Insurance Agents', 'Travel Agencies'
+];
+
 const App: React.FC = () => {
   // --- STATE ---
   const [view, setView] = useState<ViewState>('dashboard');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   // Data
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -86,13 +94,84 @@ const App: React.FC = () => {
     isDanger: false
   });
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [runTutorial, setRunTutorial] = useState(false);
+  
+  const tutorialSteps: Step[] = useMemo(() => [
+    {
+      target: 'body',
+      content: (
+        <div className="text-center space-y-2">
+          <h3 className="font-bold text-lg">Welcome to MapLeads! 👋</h3>
+          <p className="text-sm">Let's take a quick tour to help you find your first lead.</p>
+        </div>
+      ),
+      placement: 'center',
+      disableBeacon: true,
+    },
+    {
+      target: window.innerWidth >= 768 ? '#desktop-nav-dashboard' : '#mobile-nav-dashboard',
+      content: 'This is your Dashboard. See your stats and recent activity here.',
+      data: { view: 'dashboard' }
+    },
+    {
+      target: window.innerWidth >= 768 ? '#desktop-nav-scraper' : '#mobile-nav-scraper',
+      content: 'Go here to find new business leads from Google Maps.',
+      data: { view: 'scraper' }
+    },
+    {
+      target: '#scraper-card',
+      content: 'Enter a business category (e.g., "Dentists") and a location (e.g., "London") here.',
+      data: { view: 'scraper' }
+    },
+    {
+      target: window.innerWidth >= 768 ? '#desktop-nav-leads' : '#mobile-nav-leads',
+      content: 'Once found, your leads appear here. You can manage, export, or contact them.',
+      data: { view: 'leads' }
+    },
+    {
+      target: window.innerWidth >= 768 ? '#desktop-nav-campaigns' : '#mobile-nav-campaigns',
+      content: 'Create automated outreach campaigns via Email or WhatsApp.',
+      data: { view: 'campaigns' }
+    },
+    {
+      target: window.innerWidth >= 768 ? '#desktop-nav-whatsapp' : '#mobile-nav-whatsapp',
+      content: 'Use these tools for quick, direct WhatsApp messaging without saving contacts.',
+      data: { view: 'whatsapp' }
+    }
+  ], []);
+
+  const handleJoyrideCallback = useCallback((data: CallBackProps) => {
+    const { status, type, index, action } = data;
+    
+    if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+      setRunTutorial(false);
+      localStorage.setItem('mapleads_tutorial_completed', 'true');
+    }
+    
+    // Handle view switching
+    if (type === 'step:after') {
+      if (action === 'next') {
+         const nextStep = tutorialSteps[index + 1];
+         if (nextStep?.data?.view) {
+           setView(nextStep.data.view as ViewState);
+         }
+      } else if (action === 'prev') {
+         const prevStep = tutorialSteps[index - 1];
+         if (prevStep?.data?.view) {
+           setView(prevStep.data.view as ViewState);
+         }
+      }
+    }
+  }, [tutorialSteps]);
 
   // Scraper State
   const [scrapeCategory, setScrapeCategory] = useState('');
+  const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
   const [scrapeLocation, setScrapeLocation] = useState('');
   const [scrapeLocationHints, setScrapeLocationHints] = useState('');
   const [scrapeMode, setScrapeMode] = useState<'fast' | 'deep' | 'extreme'>('fast');
   const [isScraping, setIsScraping] = useState(false);
+  const [scrapeProgress, setScrapeProgress] = useState(0);
   const [isLocating, setIsLocating] = useState(false);
   const [scrapeError, setScrapeError] = useState<string | null>(null);
 
@@ -146,6 +225,16 @@ const App: React.FC = () => {
       localStorage.setItem('mapleads_onboarding', 'true');
     }
   }, []);
+
+  useEffect(() => {
+    if (!showOnboarding) {
+      const hasSeenTutorial = localStorage.getItem('mapleads_tutorial_completed');
+      if (!hasSeenTutorial) {
+        const timer = setTimeout(() => setRunTutorial(true), 1000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [showOnboarding]);
 
   useEffect(() => {
     try {
@@ -207,6 +296,18 @@ const App: React.FC = () => {
     }
   };
 
+  const clearHistory = () => {
+    if (searchHistory.length === 0) return;
+    setSearchHistory([]);
+    addToast("Search history cleared", 'info');
+  };
+
+  const deleteHistoryItem = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSearchHistory(prev => prev.filter(item => item.id !== id));
+    addToast("Item removed from history", 'info');
+  };
+
   const processTemplate = (template: string, lead: Lead) => {
     return template
       .replace(/{name}/g, lead.name)
@@ -254,7 +355,18 @@ const App: React.FC = () => {
     }
 
     setIsScraping(true);
+    setScrapeProgress(0);
     setScrapeError(null);
+
+    // Simulate progress
+    const progressInterval = setInterval(() => {
+      setScrapeProgress(prev => {
+        if (prev >= 90) return prev;
+        // Slower progress as it gets higher
+        const increment = Math.max(0.5, (90 - prev) / 20);
+        return Math.min(90, prev + increment);
+      });
+    }, 200);
 
     try {
       let currentKnownNames = isLoadMore ? leads.map(l => l.name) : [];
@@ -291,18 +403,26 @@ const App: React.FC = () => {
         if (i < iterations - 1) await new Promise(r => setTimeout(r, 1500));
       }
 
+      clearInterval(progressInterval);
+      setScrapeProgress(100);
+
       if (gatheredLeads.length > 0) {
         if (!isLoadMore) {
            addToHistory(scrapeCategory, scrapeLocation, gatheredLeads);
+           await new Promise(r => setTimeout(r, 600));
            addToast(`Search Complete! Found ${gatheredLeads.length} total businesses.`, 'success');
            setView('leads');
         } else {
            addToast(`Added ${gatheredLeads.length} more leads`, 'success');
         }
+      } else {
+        setScrapeProgress(0);
       }
 
     } catch (error: any) {
       console.error(error);
+      clearInterval(progressInterval);
+      setScrapeProgress(0);
       setScrapeError("Failed to fetch leads. AI service might be busy.");
       addToast("Scraping failed. Please try again.", 'error');
     } finally {
@@ -522,8 +642,8 @@ const App: React.FC = () => {
     ];
 
     return (
-      <div className="space-y-6 animate-fade-in">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="space-y-6 animate-fade-in pb-20 md:pb-0">
+        <div id="dashboard-stats" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatsCard title="Total Leads" value={totalLeads} icon={Users} color="blue" />
           <StatsCard title="Contacted" value={contacted} icon={MessageCircle} color="orange" />
           <StatsCard title="Converted" value={converted} icon={CheckCircle} color="green" />
@@ -531,47 +651,72 @@ const App: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-white rounded-xl shadow-card p-6">
+          <div className="lg:col-span-2 bg-white rounded-xl shadow-card border border-gray-100 p-6 flex flex-col">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-medium text-textMain">Recent Searches</h3>
-              <History className="text-textSec" size={20} />
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-50 rounded-lg text-googleBlue">
+                  <History size={20} />
+                </div>
+                <h3 className="text-lg font-medium text-textMain">Recent Searches</h3>
+              </div>
+              {searchHistory.length > 0 && (
+                <button 
+                  onClick={clearHistory}
+                  className="text-xs font-medium text-red-500 hover:text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1.5"
+                >
+                  <Trash2 size={12} /> Clear
+                </button>
+              )}
             </div>
             
-            <div className="overflow-x-auto">
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm text-left">
-                <thead className="text-xs text-textSec uppercase bg-gray-50">
+                <thead className="text-xs text-textSec uppercase bg-gray-50/50">
                   <tr>
-                    <th className="px-4 py-3 rounded-l-lg">Query</th>
-                    <th className="px-4 py-3">Location</th>
-                    <th className="px-4 py-3">Results</th>
-                    <th className="px-4 py-3">Date</th>
-                    <th className="px-4 py-3 rounded-r-lg text-right">Action</th>
+                    <th className="px-4 py-3 rounded-l-lg font-medium">Query</th>
+                    <th className="px-4 py-3 font-medium">Location</th>
+                    <th className="px-4 py-3 font-medium">Results</th>
+                    <th className="px-4 py-3 font-medium">Date</th>
+                    <th className="px-4 py-3 rounded-r-lg text-right font-medium">Action</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-gray-50">
                   {searchHistory.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-textSec">No search history yet.</td>
+                      <td colSpan={5} className="px-4 py-12 text-center text-textSec">
+                        <Search size={24} className="mx-auto mb-2 opacity-20" />
+                        No search history yet.
+                      </td>
                     </tr>
                   ) : (
                     searchHistory.map((item) => (
-                      <tr key={item.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
+                      <tr key={item.id} className="hover:bg-gray-50/80 transition-colors group">
                         <td className="px-4 py-3 font-medium text-textMain">{item.category}</td>
                         <td className="px-4 py-3 text-textSec">{item.location}</td>
                         <td className="px-4 py-3">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
                             {item.resultsCount}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-textSec">{new Date(item.timestamp).toLocaleDateString()}</td>
                         <td className="px-4 py-3 text-right">
-                          <button 
-                            onClick={() => restoreSession(item)}
-                            title="Restore Session"
-                            className="text-googleBlue hover:bg-blue-50 p-1.5 rounded-full transition-colors"
-                          >
-                            <RotateCcw size={16} />
-                          </button>
+                          <div className="flex items-center justify-end gap-2">
+                            <button 
+                              onClick={() => restoreSession(item)}
+                              title="Restore Session"
+                              className="text-googleBlue hover:bg-blue-50 p-2 rounded-lg transition-colors"
+                            >
+                              <RotateCcw size={16} />
+                            </button>
+                            <button 
+                              onClick={(e) => deleteHistoryItem(item.id, e)}
+                              title="Delete Item"
+                              className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -579,10 +724,54 @@ const App: React.FC = () => {
                 </tbody>
               </table>
             </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-4">
+              {searchHistory.length === 0 ? (
+                <div className="text-center py-8 text-textSec">
+                   <Search size={24} className="mx-auto mb-2 opacity-20" />
+                   <p>No search history yet.</p>
+                </div>
+              ) : (
+                searchHistory.map((item) => (
+                  <div key={item.id} className="bg-gray-50 p-4 rounded-xl border border-gray-100 relative">
+                    <div className="flex justify-between items-start mb-2">
+                       <div>
+                         <h4 className="font-medium text-textMain">{item.category}</h4>
+                         <p className="text-xs text-textSec flex items-center gap-1 mt-1">
+                           <MapPin size={10}/> {item.location}
+                         </p>
+                       </div>
+                       <span className="bg-white text-blue-600 text-xs font-bold px-2 py-1 rounded-lg shadow-sm border border-gray-100">
+                         {item.resultsCount}
+                       </span>
+                    </div>
+                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200/50">
+                       <span className="text-xs text-textSec">{new Date(item.timestamp).toLocaleDateString()}</span>
+                       <div className="flex gap-2">
+                          <button 
+                            onClick={() => restoreSession(item)}
+                            className="p-1.5 bg-blue-100 text-blue-600 rounded-lg"
+                          >
+                            <RotateCcw size={14}/>
+                          </button>
+                          <button 
+                            onClick={(e) => deleteHistoryItem(item.id, e)}
+                            className="p-1.5 bg-white border border-gray-200 text-gray-400 hover:text-red-500 rounded-lg"
+                          >
+                            <Trash2 size={14}/>
+                          </button>
+                       </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
-          <div className="bg-white rounded-xl shadow-card p-6 flex flex-col items-center justify-center">
-            <h3 className="text-lg font-medium text-textMain mb-4 w-full text-left">Lead Status</h3>
-            <div className="h-64 w-full">
+          
+          <div className="bg-white rounded-xl shadow-card border border-gray-100 p-6 flex flex-col">
+            <h3 className="text-lg font-medium text-textMain mb-6">Lead Status</h3>
+            <div className="h-64 w-full relative min-w-0 min-h-0">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -593,105 +782,199 @@ const App: React.FC = () => {
                     outerRadius={80}
                     paddingAngle={5}
                     dataKey="value"
+                    stroke="none"
                   >
                     {data.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <RechartsTooltip />
+                  <RechartsTooltip 
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span className="text-3xl font-bold text-textMain">{totalLeads}</span>
+                <span className="text-xs text-textSec uppercase tracking-wider">Total</span>
+              </div>
+            </div>
+            <div className="mt-6 grid grid-cols-2 gap-4">
+               {data.map((d) => (
+                 <div key={d.name} className="flex items-center gap-2 text-sm">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: d.color }} />
+                    <span className="text-textSec">{d.name}</span>
+                 </div>
+               ))}
             </div>
           </div>
+        </div>
+
+        <div className="mt-8 pb-8 text-center animate-fade-in">
+          <p className="text-sm font-medium text-textSec/60 flex items-center justify-center gap-1.5">
+            Made with <Heart size={14} className="text-red-500 fill-red-500 animate-pulse" /> by <span className="text-textMain font-semibold">Sardar Toheed</span>
+          </p>
         </div>
       </div>
     );
   };
 
   const renderScraper = () => (
-    <div className="max-w-2xl mx-auto space-y-8 animate-fade-in">
-      <div className="text-center space-y-2 mb-8">
-        <h2 className="text-3xl font-light text-textMain">Find New Businesses</h2>
-        <p className="text-textSec">Enter a category and location to start scraping Google Maps.</p>
+    <div className="max-w-3xl mx-auto space-y-8 animate-fade-in pb-20 md:pb-0">
+      <div className="text-center space-y-4 mb-12 pt-8">
+        <h2 className="text-4xl md:text-5xl font-bold text-textMain tracking-tight">Find Your Next Customer</h2>
+        <p className="text-lg text-textSec max-w-lg mx-auto">AI-powered lead generation from Google Maps. Enter a niche and location to get started.</p>
       </div>
 
-      <div className="bg-white p-8 rounded-2xl shadow-card space-y-6 relative overflow-hidden">
-        <div className="absolute top-0 right-0 -mt-16 -mr-16 w-32 h-32 bg-blue-50 rounded-full blur-2xl opacity-50 pointer-events-none"></div>
+      <div id="scraper-card" className="bg-white p-6 md:p-8 rounded-3xl shadow-xl shadow-blue-900/5 border border-gray-100 space-y-8 relative overflow-hidden">
+        {isScraping && (
+          <div className="absolute inset-0 bg-white/95 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-8 animate-fade-in">
+             <div className="w-full max-w-md space-y-8 text-center">
+                <div className="relative w-24 h-24 mx-auto">
+                   <div className="absolute inset-0 border-4 border-gray-100 rounded-full"></div>
+                   <div className="absolute inset-0 border-4 border-googleBlue rounded-full border-t-transparent animate-spin"></div>
+                   <div className="absolute inset-0 flex items-center justify-center">
+                      <Search className="text-googleBlue animate-pulse" size={32} />
+                   </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-bold text-textMain">Finding Best Leads...</h3>
+                  <p className="text-textSec">Scanning Google Maps for <span className="font-medium text-googleBlue">{scrapeCategory}</span> in <span className="font-medium text-textMain">{scrapeLocation}</span></p>
+                </div>
 
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-textSec mb-1">Business Category</label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-              <input
-                type="text"
-                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-googleBlue focus:border-transparent transition-all outline-none"
-                placeholder="e.g. Gyms, Dentists, Real Estate Agents"
-                value={scrapeCategory}
-                onChange={(e) => setScrapeCategory(e.target.value)}
-              />
-            </div>
+                <div className="space-y-2">
+                  <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                     <div 
+                       className="h-full bg-gradient-to-r from-googleBlue to-blue-400 transition-all duration-300 ease-out rounded-full"
+                       style={{ width: `${scrapeProgress}%` }}
+                     ></div>
+                  </div>
+                  <div className="flex justify-between text-xs text-textSec font-medium px-1">
+                     <span className={scrapeProgress > 10 ? 'text-googleBlue' : ''}>Initializing</span>
+                     <span className={scrapeProgress > 40 ? 'text-googleBlue' : ''}>Analyzing</span>
+                     <span className={scrapeProgress > 80 ? 'text-googleBlue' : ''}>Extracting</span>
+                  </div>
+                </div>
+             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-textSec mb-1">Location</label>
-            <div className="relative flex gap-2">
-              <div className="relative flex-1">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+        )}
+        <div className="absolute top-0 right-0 -mt-20 -mr-20 w-64 h-64 bg-gradient-to-br from-blue-50 to-purple-50 rounded-full blur-3xl opacity-60 pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-64 h-64 bg-gradient-to-tr from-green-50 to-teal-50 rounded-full blur-3xl opacity-60 pointer-events-none"></div>
+
+        <div className="space-y-6 relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-textMain ml-1">Business Category</label>
+              <div className="relative group">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-googleBlue transition-colors" size={20} />
                 <input
                   type="text"
-                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-googleBlue focus:border-transparent transition-all outline-none"
-                  placeholder="e.g. New York, Downtown Dubai"
-                  value={scrapeLocation}
-                  onChange={(e) => setScrapeLocation(e.target.value)}
+                  className="w-full pl-12 pr-4 py-4 bg-gray-50/50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-googleBlue focus:bg-white transition-all outline-none font-medium text-textMain placeholder-gray-400"
+                  placeholder="e.g. Gyms, Dentists..."
+                  value={scrapeCategory}
+                  onChange={(e) => {
+                    setScrapeCategory(e.target.value);
+                    setShowCategorySuggestions(true);
+                  }}
+                  onFocus={() => setShowCategorySuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowCategorySuggestions(false), 200)}
                 />
+                
+                {/* Suggestions Dropdown */}
+                {showCategorySuggestions && scrapeCategory && (
+                  <div className="absolute z-20 w-full mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl max-h-64 overflow-y-auto animate-fade-in p-2">
+                    {CATEGORIES.filter(c => c.toLowerCase().includes(scrapeCategory.toLowerCase())).map((cat) => (
+                      <button
+                        key={cat}
+                        onMouseDown={(e) => {
+                          e.preventDefault(); 
+                          setScrapeCategory(cat);
+                          setShowCategorySuggestions(false);
+                        }}
+                        className="w-full text-left px-4 py-3 hover:bg-blue-50 text-sm font-medium text-textMain rounded-xl transition-colors flex items-center gap-3 group"
+                      >
+                        <div className="p-1.5 bg-gray-100 rounded-lg text-gray-400 group-hover:text-googleBlue group-hover:bg-blue-100 transition-colors">
+                           <Search size={14} />
+                        </div>
+                        {cat}
+                      </button>
+                    ))}
+                    {CATEGORIES.filter(c => c.toLowerCase().includes(scrapeCategory.toLowerCase())).length === 0 && (
+                       <div className="px-4 py-3 text-sm text-textSec italic text-center">No matching categories found</div>
+                    )}
+                  </div>
+                )}
               </div>
-              <button 
-                onClick={handleLocateMe}
-                disabled={isLocating}
-                className="px-4 py-2 bg-blue-50 text-googleBlue rounded-xl hover:bg-blue-100 transition-colors flex items-center justify-center"
-              >
-                {isLocating ? <Loader2 className="animate-spin" size={20} /> : <Crosshair size={20} />}
-              </button>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-textMain ml-1">Location</label>
+              <div className="relative flex gap-2 group">
+                <div className="relative flex-1">
+                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-googleRed transition-colors" size={20} />
+                  <input
+                    type="text"
+                    className="w-full pl-12 pr-4 py-4 bg-gray-50/50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-red-500/10 focus:border-googleRed focus:bg-white transition-all outline-none font-medium text-textMain placeholder-gray-400"
+                    placeholder="e.g. New York, Dubai"
+                    value={scrapeLocation}
+                    onChange={(e) => setScrapeLocation(e.target.value)}
+                  />
+                </div>
+                <button 
+                  onClick={handleLocateMe}
+                  disabled={isLocating}
+                  className="px-5 bg-blue-50 text-googleBlue rounded-2xl hover:bg-blue-100 transition-colors flex items-center justify-center border border-blue-100"
+                  title="Use my location"
+                >
+                  {isLocating ? <Loader2 className="animate-spin" size={24} /> : <Crosshair size={24} />}
+                </button>
+              </div>
             </div>
           </div>
-          <div>
-             <label className="block text-sm font-medium text-textSec mb-1">Specific Location Hints (Optional)</label>
+
+          <div className="space-y-2">
+             <label className="block text-sm font-semibold text-textMain ml-1">Specific Hints (Optional)</label>
              <input
                 type="text"
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-googleBlue focus:border-transparent transition-all outline-none text-sm"
+                className="w-full px-5 py-3 bg-gray-50/50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-googleBlue focus:bg-white transition-all outline-none text-sm text-textMain placeholder-gray-400"
                 placeholder="e.g. Near Central Park, Business Bay area"
                 value={scrapeLocationHints}
                 onChange={(e) => setScrapeLocationHints(e.target.value)}
               />
           </div>
-          <div className="grid grid-cols-3 gap-4 pt-2">
-            {[
-              { id: 'fast', label: 'Fast', icon: Zap, desc: 'Quick scan' },
-              { id: 'deep', label: 'Deep', icon: Layers, desc: 'Thorough' },
-              { id: 'extreme', label: 'Extreme', icon: Flame, desc: 'Max Volume' }
-            ].map((mode) => (
-              <button
-                key={mode.id}
-                onClick={() => setScrapeMode(mode.id as any)}
-                className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                  scrapeMode === mode.id
-                    ? 'border-googleBlue bg-blue-50 text-googleBlue'
-                    : 'border-transparent bg-gray-50 text-textSec hover:bg-gray-100'
-                }`}
-              >
-                <mode.icon size={24} className="mb-2" />
-                <span className="font-medium text-sm">{mode.label}</span>
-              </button>
-            ))}
+
+          <div className="pt-4">
+            <label className="block text-sm font-semibold text-textMain mb-3 ml-1">Search Depth</label>
+            <div className="grid grid-cols-3 gap-4">
+              {[
+                { id: 'fast', label: 'Fast', icon: Zap, desc: 'Quick scan' },
+                { id: 'deep', label: 'Deep', icon: Layers, desc: 'Thorough' },
+                { id: 'extreme', label: 'Extreme', icon: Flame, desc: 'Max Volume' }
+              ].map((mode) => (
+                <button
+                  key={mode.id}
+                  onClick={() => setScrapeMode(mode.id as any)}
+                  className={`flex flex-col items-center justify-center p-4 rounded-2xl border transition-all duration-200 relative overflow-hidden ${
+                    scrapeMode === mode.id
+                      ? 'border-googleBlue bg-blue-50/50 text-googleBlue ring-1 ring-googleBlue shadow-sm'
+                      : 'border-gray-200 bg-white text-textSec hover:border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <mode.icon size={24} className={`mb-2 ${scrapeMode === mode.id ? 'text-googleBlue' : 'text-gray-400'}`} />
+                  <span className="font-semibold text-sm">{mode.label}</span>
+                  <span className="text-[10px] opacity-70 mt-0.5">{mode.desc}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
         <button
           onClick={() => performScrape(false)}
           disabled={isScraping}
-          className="w-full py-4 bg-googleBlue hover:bg-blue-600 text-white rounded-xl font-medium shadow-lg shadow-blue-500/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+          className="w-full py-5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-lg shadow-xl shadow-blue-500/20 transition-all active:scale-[0.98] flex items-center justify-center gap-3 relative z-10 cursor-pointer"
         >
-          {isScraping ? <><Loader2 className="animate-spin" /> Scraping...</> : <><Search size={20} /> Start Search</>}
+          {isScraping ? <><Loader2 className="animate-spin" /> Finding Leads...</> : <><Search size={22} /> Start Searching</>}
         </button>
       </div>
     </div>
@@ -757,8 +1040,9 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-hidden bg-white rounded-xl shadow-card flex flex-col">
-        <div className="overflow-auto flex-1">
+      <div className="flex-1 overflow-hidden flex flex-col md:bg-white md:rounded-xl md:shadow-card">
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-auto flex-1">
           <table className="w-full text-sm text-left">
             <thead className="text-xs text-textSec uppercase bg-gray-50 sticky top-0 z-10 shadow-sm">
               <tr>
@@ -836,6 +1120,66 @@ const App: React.FC = () => {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card View */}
+        <div className="md:hidden overflow-auto flex-1 space-y-3 pb-20">
+           {leads.map((lead) => (
+             <div key={lead.id} className={`bg-white p-4 rounded-xl shadow-sm border border-gray-100 relative ${selectedLeadIds.has(lead.id) ? 'ring-2 ring-googleBlue' : ''}`}>
+                <div className="flex justify-between items-start mb-2">
+                   <div className="flex items-start gap-3">
+                      <button onClick={() => handleSelectLead(lead.id)} className={`mt-1 ${selectedLeadIds.has(lead.id) ? 'text-googleBlue' : 'text-gray-300'}`}>
+                         {selectedLeadIds.has(lead.id) ? <CheckSquare size={20}/> : <Square size={20}/>}
+                      </button>
+                      <div>
+                        <h4 className="font-medium text-textMain">{lead.name}</h4>
+                        <div className="text-xs text-textSec flex items-center gap-1 mt-1">
+                          <Sparkles size={10} className="text-yellow-500"/> {lead.rating} • {lead.category}
+                        </div>
+                      </div>
+                   </div>
+                   <select 
+                      value={lead.status}
+                      onChange={(e) => handleStatusChange(lead.id, e.target.value as any)}
+                      className={`text-[10px] font-bold px-2 py-1 rounded-full border-none outline-none
+                        ${lead.status === 'New' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}
+                        ${lead.status === 'Contacted' ? 'bg-green-100 text-green-700' : ''}
+                      `}
+                   >
+                     <option value="New">New</option>
+                     <option value="Contacted">Contacted</option>
+                     <option value="Converted">Converted</option>
+                     <option value="Invalid">Invalid</option>
+                   </select>
+                </div>
+                
+                <div className="space-y-2 mt-3 pl-8 border-l-2 border-gray-100 ml-2">
+                   <div className="flex items-center gap-2 text-xs text-textSec">
+                     <MapPin size={12} className="text-gray-400"/> {lead.address}
+                   </div>
+                   {lead.phone !== 'N/A' && (
+                     <div className="flex items-center gap-2 text-xs text-textSec">
+                       <MessageCircle size={12} className="text-waGreen"/> {lead.phone}
+                     </div>
+                   )}
+                </div>
+
+                <div className="flex justify-end gap-3 mt-4 pt-3 border-t border-gray-50">
+                   <button
+                     onClick={() => handleWhatsAppAction(lead)}
+                     className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-waGreen rounded-lg text-xs font-medium hover:bg-green-100"
+                   >
+                      <MessageCircle size={14} /> Message
+                   </button>
+                   <button
+                      onClick={() => handleDeleteLead(lead.id)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-500 rounded-lg text-xs font-medium hover:bg-red-100"
+                   >
+                     <Trash2 size={14} /> Delete
+                   </button>
+                </div>
+             </div>
+           ))}
         </div>
       </div>
       
@@ -920,8 +1264,9 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex-1 bg-white rounded-xl shadow-card overflow-hidden flex flex-col">
-            <div className="overflow-auto flex-1">
+          <div className="flex-1 overflow-hidden flex flex-col md:bg-white md:rounded-xl md:shadow-card">
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-auto flex-1">
               <table className="w-full text-sm text-left">
                 <thead className="text-xs text-textSec uppercase bg-gray-50 sticky top-0">
                   <tr>
@@ -957,6 +1302,35 @@ const App: React.FC = () => {
                 </tbody>
               </table>
             </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden overflow-auto flex-1 space-y-3 pb-20">
+               {activeCampaign.leads.map((lead) => (
+                 <div key={lead.id} className={`bg-white p-4 rounded-xl shadow-sm border border-gray-100 ${lead.status === 'Contacted' ? 'opacity-75' : ''}`}>
+                    <div className="flex justify-between items-start mb-2">
+                       <div>
+                         <h4 className="font-medium text-textMain">{lead.name}</h4>
+                         <p className="text-xs text-textSec mt-1">{lead.phone}</p>
+                       </div>
+                       {lead.status === 'Contacted' ? 
+                          <span className="flex items-center gap-1 text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-lg"><CheckCircle size={12}/> Sent</span> : 
+                          <span className="text-xs font-medium text-textSec bg-gray-100 px-2 py-1 rounded-lg">Pending</span>
+                       }
+                    </div>
+                    
+                    {lead.status !== 'Contacted' && (
+                      <div className="mt-3 pt-3 border-t border-gray-50 flex justify-end">
+                        <button
+                          onClick={() => handleCampaignAction(activeCampaign.id, lead, 'send')}
+                          className="w-full py-2 bg-googleBlue text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
+                        >
+                          <Send size={14} /> Send Now
+                        </button>
+                      </div>
+                    )}
+                 </div>
+               ))}
+            </div>
           </div>
         </div>
       );
@@ -980,46 +1354,46 @@ const App: React.FC = () => {
 
         {/* Create Mode */}
         {isCreatingCampaign && (
-          <div className="bg-white p-6 rounded-xl shadow-card border border-gray-100 space-y-6 animate-slide-in">
+          <div className="bg-white p-4 md:p-6 rounded-xl shadow-card border border-gray-100 space-y-6 animate-slide-in">
              <div className="flex justify-between items-start">
-               <h3 className="text-lg font-medium">New Campaign Wizard</h3>
-               <button onClick={() => setIsCreatingCampaign(false)} className="text-gray-400 hover:text-gray-600"><X size={20}/></button>
+               <h3 className="text-lg font-medium text-textMain">New Campaign Wizard</h3>
+               <button onClick={() => setIsCreatingCampaign(false)} className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg"><X size={20}/></button>
              </div>
 
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                   <label className="block text-sm font-medium text-textSec mb-1">Campaign Name</label>
+                   <label className="block text-sm font-medium text-textSec mb-1.5">Campaign Name</label>
                    <input 
-                     className="w-full p-2 border rounded-lg bg-gray-50"
+                     className="w-full p-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all outline-none text-sm"
                      value={newCampaignData.name}
                      onChange={e => setNewCampaignData({...newCampaignData, name: e.target.value})}
                      placeholder="e.g. Summer Promo"
                    />
                 </div>
                 <div>
-                   <label className="block text-sm font-medium text-textSec mb-1">Platform</label>
-                   <div className="flex gap-2">
+                   <label className="block text-sm font-medium text-textSec mb-1.5">Platform</label>
+                   <div className="flex gap-3">
                       <button 
                         onClick={() => setNewCampaignData({...newCampaignData, platform: 'WhatsApp'})}
-                        className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${newCampaignData.platform === 'WhatsApp' ? 'bg-green-100 text-green-700 ring-2 ring-green-500' : 'bg-gray-50 text-textSec'}`}
+                        className={`flex-1 py-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 ${newCampaignData.platform === 'WhatsApp' ? 'bg-green-50 text-green-700 ring-1 ring-green-500 shadow-sm' : 'bg-gray-50 text-textSec hover:bg-gray-100'}`}
                       >
-                        WhatsApp
+                        <MessageCircle size={16} className={newCampaignData.platform === 'WhatsApp' ? 'fill-current' : ''}/> WhatsApp
                       </button>
                       <button 
                         onClick={() => setNewCampaignData({...newCampaignData, platform: 'Email'})}
-                        className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${newCampaignData.platform === 'Email' ? 'bg-blue-100 text-blue-700 ring-2 ring-blue-500' : 'bg-gray-50 text-textSec'}`}
+                        className={`flex-1 py-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 ${newCampaignData.platform === 'Email' ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-500 shadow-sm' : 'bg-gray-50 text-textSec hover:bg-gray-100'}`}
                       >
-                        Email
+                        <Mail size={16} className={newCampaignData.platform === 'Email' ? 'fill-current' : ''}/> Email
                       </button>
                    </div>
                 </div>
              </div>
 
              <div>
-                <label className="block text-sm font-medium text-textSec mb-1">What is this campaign about?</label>
-                <div className="flex gap-2">
+                <label className="block text-sm font-medium text-textSec mb-1.5">What is this campaign about?</label>
+                <div className="flex flex-col md:flex-row gap-3">
                    <input 
-                     className="flex-1 p-2 border rounded-lg bg-gray-50"
+                     className="flex-1 p-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all outline-none text-sm"
                      value={newCampaignData.topic}
                      onChange={e => setNewCampaignData({...newCampaignData, topic: e.target.value})}
                      placeholder="e.g. Offering 20% off for new gym members"
@@ -1027,28 +1401,28 @@ const App: React.FC = () => {
                    <button 
                      onClick={handleGenerateCampaignContent}
                      disabled={isGeneratingContent}
-                     className="px-4 py-2 bg-purple-50 text-purple-600 rounded-lg font-medium hover:bg-purple-100 transition-colors flex items-center gap-2"
+                     className="px-6 py-3 bg-purple-50 text-purple-600 rounded-xl font-medium hover:bg-purple-100 transition-colors flex items-center justify-center gap-2 shadow-sm"
                    >
-                     {isGeneratingContent ? <Loader2 className="animate-spin" size={16}/> : <Sparkles size={16}/>} 
+                     {isGeneratingContent ? <Loader2 className="animate-spin" size={18}/> : <Sparkles size={18}/>} 
                      Generate AI
                    </button>
                 </div>
              </div>
 
              {generatedContent.body && (
-               <div className="space-y-3">
+               <div className="space-y-4 pt-2 border-t border-gray-50">
                   <div>
-                    <label className="block text-sm font-medium text-textSec mb-1">Subject / Header</label>
+                    <label className="block text-sm font-medium text-textSec mb-1.5">Subject / Header</label>
                     <input 
-                      className="w-full p-2 border rounded-lg"
+                      className="w-full p-3 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-100 outline-none text-sm"
                       value={generatedContent.subject}
                       onChange={e => setGeneratedContent({...generatedContent, subject: e.target.value})}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-textSec mb-1">Message Body</label>
+                    <label className="block text-sm font-medium text-textSec mb-1.5">Message Body</label>
                     <textarea 
-                      className="w-full p-2 border rounded-lg h-32 font-mono text-sm"
+                      className="w-full p-3 border border-gray-200 rounded-xl h-32 font-mono text-sm bg-white focus:ring-2 focus:ring-blue-100 outline-none resize-none"
                       value={generatedContent.body}
                       onChange={e => setGeneratedContent({...generatedContent, body: e.target.value})}
                     />
@@ -1056,7 +1430,7 @@ const App: React.FC = () => {
                   <div className="pt-2 flex justify-end">
                     <button 
                       onClick={handleSaveCampaign}
-                      className="px-6 py-2 bg-googleBlue text-white rounded-lg font-medium hover:bg-blue-600"
+                      className="w-full md:w-auto px-8 py-3 bg-googleBlue text-white rounded-xl font-medium hover:bg-blue-600 shadow-lg shadow-blue-200 transition-all active:scale-95"
                     >
                       Save Campaign
                     </button>
@@ -1125,56 +1499,67 @@ const App: React.FC = () => {
   };
 
   const renderWhatsApp = () => (
-    <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
-       <div className="text-center mb-8">
-         <h2 className="text-2xl font-light text-textMain">WhatsApp Tools</h2>
-         <p className="text-textSec text-sm">Utilities for quick messaging without saving contacts.</p>
+    <div className="max-w-2xl mx-auto space-y-6 animate-fade-in pb-20 md:pb-0">
+       <div className="text-center mb-8 pt-8">
+         <h2 className="text-3xl font-bold text-textMain tracking-tight">WhatsApp Tools</h2>
+         <p className="text-textSec text-lg mt-2">Utilities for quick messaging without saving contacts.</p>
        </div>
 
        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Direct Sender */}
-          <div className="bg-white p-6 rounded-xl shadow-card space-y-4">
-             <div className="flex items-center gap-2 mb-2 text-waGreen">
-                <Send size={20} />
-                <h3 className="font-medium text-textMain">Direct Chat</h3>
+          <div className="bg-white p-6 rounded-2xl shadow-card border border-gray-100 space-y-5 hover:shadow-lg transition-shadow">
+             <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-green-50 rounded-xl text-waGreen">
+                   <Send size={24} />
+                </div>
+                <div>
+                   <h3 className="font-semibold text-textMain">Direct Chat</h3>
+                   <p className="text-xs text-textSec">Open chat without saving</p>
+                </div>
              </div>
-             <p className="text-xs text-textSec">Open a chat instantly without saving the number to your phonebook.</p>
              
-             <input 
-               className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm"
-               placeholder="Phone number (e.g. +1234567890)"
-               value={waDirectPhone}
-               onChange={e => setWaDirectPhone(e.target.value)}
-             />
-             <textarea 
-               className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm h-24"
-               placeholder="Message (Optional)"
-               value={waDirectMsg}
-               onChange={e => setWaDirectMsg(e.target.value)}
-             />
+             <div className="space-y-3">
+               <input 
+                 className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-green-100 focus:border-green-200 transition-all outline-none"
+                 placeholder="Phone number (e.g. +1234567890)"
+                 value={waDirectPhone}
+                 onChange={e => setWaDirectPhone(e.target.value)}
+               />
+               <textarea 
+                 className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm h-24 focus:bg-white focus:ring-2 focus:ring-green-100 focus:border-green-200 transition-all outline-none resize-none"
+                 placeholder="Message (Optional)"
+                 value={waDirectMsg}
+                 onChange={e => setWaDirectMsg(e.target.value)}
+               />
+             </div>
+
              <button 
                onClick={() => {
                  if(!waDirectPhone) { addToast("Enter a phone number", 'warning'); return; }
                  openWhatsAppTab(waDirectPhone, waDirectMsg);
                }}
-               className="w-full py-2 bg-waGreen text-white rounded-lg font-medium hover:bg-green-600 transition-colors"
+               className="w-full py-3 bg-waGreen text-white rounded-xl font-bold hover:bg-green-600 transition-all shadow-lg shadow-green-200 active:scale-[0.98] flex items-center justify-center gap-2"
              >
-               Open WhatsApp
+               <MessageCircle size={18} /> Open WhatsApp
              </button>
           </div>
 
           {/* Link Generator */}
-          <div className="bg-white p-6 rounded-xl shadow-card space-y-4">
-             <div className="flex items-center gap-2 mb-2 text-googleBlue">
-                <Link size={20} />
-                <h3 className="font-medium text-textMain">Link Generator</h3>
+          <div className="bg-white p-6 rounded-2xl shadow-card border border-gray-100 space-y-5 hover:shadow-lg transition-shadow">
+             <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-blue-50 rounded-xl text-googleBlue">
+                   <Link size={24} />
+                </div>
+                <div>
+                   <h3 className="font-semibold text-textMain">Link Generator</h3>
+                   <p className="text-xs text-textSec">Create shareable deep links</p>
+                </div>
              </div>
-             <p className="text-xs text-textSec">Create a deep link to share on social media or email signatures.</p>
              
-             <div className="p-4 bg-gray-50 rounded-xl text-xs font-mono break-all text-gray-600 border border-gray-200">
+             <div className="p-4 bg-gray-50 rounded-xl text-xs font-mono break-all text-gray-600 border border-gray-200 h-[132px] overflow-y-auto flex items-center justify-center text-center">
                {waDirectPhone 
                  ? `https://wa.me/${waDirectPhone.replace(/\D/g,'')}${waDirectMsg ? `?text=${encodeURIComponent(waDirectMsg)}` : ''}` 
-                 : 'Enter phone & message to generate link...'}
+                 : <span className="text-gray-400 italic">Enter phone & message in the Direct Chat box to generate a link...</span>}
              </div>
              
              <button 
@@ -1183,9 +1568,9 @@ const App: React.FC = () => {
                   navigator.clipboard.writeText(link);
                   addToast("Link copied to clipboard", 'success');
                }}
-               className="w-full py-2 bg-white border border-gray-200 text-textMain rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+               className="w-full py-3 bg-white border border-gray-200 text-textMain rounded-xl font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
              >
-               <Copy size={16}/> Copy Link
+               <Copy size={18}/> Copy Link
              </button>
           </div>
        </div>
@@ -1193,90 +1578,124 @@ const App: React.FC = () => {
   );
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden font-sans">
-      {/* Sidebar */}
-      <aside className={`
-        fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out
-        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0
-      `}>
+    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
+      {/* Sidebar - Desktop Only */}
+      <aside className="hidden md:flex md:flex-col md:w-72 bg-white border-r border-gray-200 shadow-none z-40">
         <div className="h-full flex flex-col">
-          <div className="h-16 flex items-center px-6 border-b border-gray-100">
-             <div className="flex items-center gap-2 text-googleBlue">
-               <MapPin className="fill-current" size={24} />
-               <span className="text-xl font-bold tracking-tight text-gray-800">Map<span className="text-googleBlue">Leads</span></span>
+          <div className="h-20 flex items-center px-8 border-b border-gray-50">
+             <div className="flex items-center gap-3 text-googleBlue">
+               <div className="p-2 bg-blue-600 rounded-xl text-white shadow-lg shadow-blue-500/30">
+                 <MapPin className="fill-current" size={24} />
+               </div>
+               <span className="text-2xl font-bold tracking-tight text-gray-900">Map<span className="text-blue-600">Leads</span></span>
              </div>
           </div>
 
-          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          <nav className="flex-1 p-6 space-y-2 overflow-y-auto">
             {[
               { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
               { id: 'scraper', label: 'Find Leads', icon: Search },
               { id: 'leads', label: 'My Leads', icon: Users },
               { id: 'campaigns', label: 'Campaigns', icon: Rocket },
-              { id: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
+              { id: 'whatsapp', label: 'WhatsApp Tools', icon: MessageCircle },
             ].map((item) => (
               <button
                 key={item.id}
-                onClick={() => { setView(item.id as ViewState); if(window.innerWidth < 768) setIsSidebarOpen(false); }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
+                id={`desktop-nav-${item.id}`}
+                onClick={() => setView(item.id as ViewState)}
+                className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-200 group
                   ${view === item.id 
-                    ? 'bg-blue-50 text-googleBlue shadow-sm' 
-                    : 'text-textSec hover:bg-gray-50 hover:text-textMain'
+                    ? 'bg-blue-50 text-blue-600 shadow-sm ring-1 ring-blue-100' 
+                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
                   }
                 `}
               >
-                <item.icon size={20} />
+                <item.icon size={22} className={`transition-colors ${view === item.id ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'}`} />
                 {item.label}
+                {item.id === 'leads' && leads.length > 0 && (
+                  <span className="ml-auto bg-gray-100 text-gray-600 py-0.5 px-2 rounded-full text-xs font-bold">{leads.length}</span>
+                )}
               </button>
             ))}
           </nav>
 
-          <div className="p-4 border-t border-gray-100">
-             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 text-center">
-                <p className="text-xs font-medium text-googleBlue mb-2">Pro Plan Active</p>
-                <div className="w-full bg-white/50 rounded-full h-1.5 mb-2 overflow-hidden">
-                   <div className="bg-googleBlue h-full w-3/4 rounded-full"></div>
+          <div className="p-6 border-t border-gray-50">
+             <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-5 text-center text-white shadow-xl shadow-gray-900/10 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-20 h-20 bg-white opacity-5 rounded-full -mr-10 -mt-10 blur-xl"></div>
+                <p className="text-xs font-bold text-blue-200 mb-3 uppercase tracking-wider">Pro Plan Active</p>
+                <div className="w-full bg-gray-700 rounded-full h-1.5 mb-3 overflow-hidden">
+                   <div className="bg-blue-400 h-full w-3/4 rounded-full shadow-[0_0_10px_rgba(96,165,250,0.5)]"></div>
                 </div>
-                <p className="text-[10px] text-textSec">750 / 1000 Credits Used</p>
+                <p className="text-[10px] text-gray-400 font-medium">750 / 1000 Credits Used</p>
              </div>
           </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative bg-gray-50/50 pb-20 md:pb-0">
         {/* Top Header */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-8 z-30">
-           <button 
-             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-             className="md:hidden p-2 text-textSec hover:bg-gray-100 rounded-lg"
-           >
-             <Menu size={24} />
-           </button>
-           
-           <div className="flex-1 md:flex-none"></div>
-
+        <header className="h-16 md:h-20 bg-white/80 backdrop-blur-md border-b border-gray-200/50 flex items-center justify-between px-4 md:px-10 z-30 sticky top-0">
            <div className="flex items-center gap-4">
-              <button className="p-2 text-textSec hover:bg-gray-100 rounded-full relative">
-                 <Mail size={20} />
-                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-googleRed rounded-full ring-2 ring-white"></span>
+             {/* Mobile Logo (since sidebar is hidden) */}
+             <div className="md:hidden flex items-center gap-2 text-googleBlue">
+               <div className="p-1.5 bg-blue-600 rounded-lg text-white shadow-md shadow-blue-500/30">
+                 <MapPin className="fill-current" size={18} />
+               </div>
+               <span className="text-lg font-bold tracking-tight text-gray-900">Map<span className="text-blue-600">Leads</span></span>
+             </div>
+
+             <h1 className="text-xl font-bold text-gray-900 capitalize hidden md:block">
+               {view === 'scraper' ? 'Find Leads' : view}
+             </h1>
+           </div>
+           
+           <div className="flex items-center gap-4 md:gap-6">
+              <button className="p-2 md:p-2.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 rounded-full relative transition-colors">
+                 <Mail size={20} className="md:w-[22px] md:h-[22px]" />
+                 <span className="absolute top-2 right-2 w-2 h-2 md:w-2.5 md:h-2.5 bg-red-500 rounded-full ring-2 ring-white"></span>
               </button>
-              <div className="w-8 h-8 bg-googleBlue rounded-full flex items-center justify-center text-white font-medium text-sm">
-                JD
+              <div className="flex items-center gap-3 pl-4 md:pl-6 border-l border-gray-100">
+                <div className="text-right hidden md:block">
+                  <div className="text-sm font-bold text-gray-900">John Doe</div>
+                  <div className="text-xs text-gray-500">Premium User</div>
+                </div>
+                <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xs md:text-sm shadow-lg shadow-blue-500/20 ring-2 ring-white">
+                  JD
+                </div>
               </div>
            </div>
         </header>
 
         {/* View Content */}
-        <div className="flex-1 overflow-auto p-4 md:p-8 relative">
-           {view === 'dashboard' && renderDashboard()}
-           {view === 'scraper' && renderScraper()}
-           {view === 'leads' && renderLeadsTable()}
-           {view === 'campaigns' && renderCampaigns()}
-           {view === 'whatsapp' && renderWhatsApp()}
+        <div className="flex-1 overflow-auto p-4 md:p-8 relative scroll-smooth">
+           <div className="max-w-7xl mx-auto">
+             {view === 'dashboard' && renderDashboard()}
+             {view === 'scraper' && renderScraper()}
+             {view === 'leads' && renderLeadsTable()}
+             {view === 'campaigns' && renderCampaigns()}
+             {view === 'whatsapp' && renderWhatsApp()}
+           </div>
         </div>
 
         {/* Floating Toasts */}
+        <Joyride
+          steps={tutorialSteps}
+          run={runTutorial}
+          continuous
+          showProgress
+          showSkipButton
+          callback={handleJoyrideCallback}
+          styles={{
+            options: {
+              primaryColor: '#2563eb',
+              zIndex: 1000,
+            },
+            tooltipContainer: {
+              textAlign: 'left'
+            }
+          }}
+        />
         <div className="fixed bottom-6 right-6 z-[70] flex flex-col gap-2">
           {toasts.map(toast => (
             <Toast key={toast.id} {...toast} onClose={removeToast} />
@@ -1295,14 +1714,33 @@ const App: React.FC = () => {
           onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
         />
       </main>
-      
-      {/* Mobile Overlay */}
-      {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/20 z-30 md:hidden backdrop-blur-sm"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+        <div className="flex justify-around items-center h-16 px-2">
+          {[
+            { id: 'dashboard', label: 'Home', icon: LayoutDashboard },
+            { id: 'scraper', label: 'Search', icon: Search },
+            { id: 'leads', label: 'Leads', icon: Users },
+            { id: 'campaigns', label: 'Campaigns', icon: Rocket },
+            { id: 'whatsapp', label: 'Tools', icon: MessageCircle },
+          ].map((item) => (
+            <button
+              key={item.id}
+              id={`mobile-nav-${item.id}`}
+              onClick={() => setView(item.id as ViewState)}
+              className={`flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors active:scale-95 duration-200
+                ${view === item.id ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'}
+              `}
+            >
+              <div className={`p-1.5 rounded-xl transition-all ${view === item.id ? 'bg-blue-50 -translate-y-1 shadow-sm' : ''}`}>
+                <item.icon size={20} strokeWidth={view === item.id ? 2.5 : 2} />
+              </div>
+              <span className={`text-[10px] font-medium transition-all ${view === item.id ? 'font-bold' : ''}`}>{item.label}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
     </div>
   );
 };
