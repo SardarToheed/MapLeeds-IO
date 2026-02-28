@@ -51,10 +51,7 @@ import Joyride, { CallBackProps, STATUS, Step } from 'react-joyride';
 import { searchBusinesses, generateEmailContent, hasApiKey, validateWhatsAppNumber, lookupLocation } from './services/geminiService';
 import { generateWhatsAppLink, openWhatsAppTab, isMobileDevice, shareContent, copyImageToClipboard } from './services/whatsappService';
 import { Lead, Campaign, ViewState, SearchHistoryItem } from './types';
-import { FixedSizeList as List } from 'react-window';
-import { AutoSizer } from 'react-virtualized-auto-sizer';
-import { LeadRow } from './components/LeadRow';
-import { LeadCard } from './components/LeadCard';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 
 type SortKey = 'name' | 'rating' | 'status' | 'address';
 type SortDirection = 'asc' | 'desc';
@@ -69,37 +66,6 @@ const CATEGORIES = [
   'Florists', 'Photographers', 'Architects', 'Interior Designers',
   'Software Companies', 'Consultants', 'Insurance Agents', 'Travel Agencies'
 ];
-
-const DesktopRow = ({ rowIndex, style, data }: any) => {
-  const lead = data.leads[rowIndex];
-  return (
-    <LeadRow
-      style={style}
-      lead={lead}
-      selected={data.selectedLeadIds.has(lead.id)}
-      onSelect={data.handleSelectLead}
-      onStatusChange={data.handleStatusChange}
-      onWhatsApp={data.handleWhatsAppAction}
-      onDelete={data.handleDeleteLead}
-    />
-  );
-};
-
-const MobileRow = ({ rowIndex, style, data }: any) => {
-  const lead = data.leads[rowIndex];
-  return (
-    <div style={style} className="px-4 pb-3">
-       <LeadCard
-         lead={lead}
-         selected={data.selectedLeadIds.has(lead.id)}
-         onSelect={data.handleSelectLead}
-         onStatusChange={data.handleStatusChange}
-         onWhatsApp={data.handleWhatsAppAction}
-         onDelete={data.handleDeleteLead}
-       />
-    </div>
-  );
-};
 
 const App: React.FC = () => {
   // --- STATE ---
@@ -177,7 +143,7 @@ const App: React.FC = () => {
   const handleJoyrideCallback = useCallback((data: CallBackProps) => {
     const { status, type, index, action } = data;
     
-    if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+    if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
       setRunTutorial(false);
       localStorage.setItem('mapleads_tutorial_completed', 'true');
     }
@@ -464,8 +430,8 @@ const App: React.FC = () => {
     }
   };
 
-  const handleStatusChange = useCallback((id: string, newStatus: Lead['status']) => {
-    setLeads(prev => prev.map(lead => 
+  const handleStatusChange = (id: string, newStatus: Lead['status']) => {
+    setLeads(leads.map(lead => 
       lead.id === id ? { ...lead, status: newStatus } : lead
     ));
     
@@ -480,35 +446,35 @@ const App: React.FC = () => {
          return c;
       }));
     }
-  }, [activeCampaignId]);
+  };
 
-  const handleDeleteLead = useCallback((id: string) => {
-    setLeads(prev => prev.filter(l => l.id !== id));
+  const handleDeleteLead = (id: string) => {
+    setLeads(leads.filter(l => l.id !== id));
     setSelectedLeadIds(prev => {
       const next = new Set(prev);
       next.delete(id);
       return next;
     });
-  }, []);
+  };
 
-  const handleSelectLead = useCallback((id: string) => {
+  const handleSelectLead = (id: string) => {
     setSelectedLeadIds(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-  }, []);
+  };
 
-  const handleSelectAll = useCallback(() => {
+  const handleSelectAll = () => {
     if (selectedLeadIds.size === leads.length) {
       setSelectedLeadIds(new Set());
     } else {
       setSelectedLeadIds(new Set(leads.map(l => l.id)));
     }
-  }, [leads, selectedLeadIds.size]);
+  };
 
-  const handleExport = useCallback(() => {
+  const handleExport = () => {
     const csvContent = "data:text/csv;charset=utf-8," 
       + "Name,Category,Address,Phone,Email,Website,Rating,Status\n"
       + leads.map(l => 
@@ -523,9 +489,9 @@ const App: React.FC = () => {
     link.click();
     document.body.removeChild(link);
     addToast("Leads exported to CSV", 'success');
-  }, [leads]);
+  };
 
-  const handleWhatsAppAction = useCallback((lead: Lead) => {
+  const handleWhatsAppAction = (lead: Lead) => {
     if (!validateWhatsAppNumber(lead.phone)) {
       addToast("Invalid phone number for WhatsApp", 'warning');
       return;
@@ -533,16 +499,7 @@ const App: React.FC = () => {
     const text = processTemplate(messageTemplate, lead);
     openWhatsAppTab(lead.phone, text);
     handleStatusChange(lead.id, 'Contacted');
-  }, [messageTemplate, handleStatusChange]);
-
-  const itemData = useMemo(() => ({
-    leads,
-    selectedLeadIds,
-    handleSelectLead,
-    handleStatusChange,
-    handleWhatsAppAction,
-    handleDeleteLead
-  }), [leads, selectedLeadIds, handleSelectLead, handleStatusChange, handleWhatsAppAction, handleDeleteLead]);
+  };
 
   const startBulkSend = () => {
     const queue = leads.filter(l => selectedLeadIds.has(l.id) && validateWhatsAppNumber(l.phone));
@@ -1085,46 +1042,144 @@ const App: React.FC = () => {
 
       <div className="flex-1 overflow-hidden flex flex-col md:bg-white md:rounded-xl md:shadow-card">
         {/* Desktop Table */}
-        <div className="hidden md:flex flex-col flex-1 h-full">
-           <div className="flex items-center text-xs text-textSec uppercase bg-gray-50 border-b border-gray-100 sticky top-0 z-10 shadow-sm">
-              <div className="px-4 py-3 w-10">
-                <button onClick={handleSelectAll} className="text-textSec hover:text-textMain">
-                  {selectedLeadIds.size === leads.length && leads.length > 0 ? <CheckSquare size={16}/> : <Square size={16}/>}
-                </button>
-              </div>
-              <div className="px-4 py-3 flex-1 min-w-0 font-medium">Name</div>
-              <div className="px-4 py-3 flex-1 min-w-0 font-medium hidden sm:block">Details</div>
-              <div className="px-4 py-3 w-32 font-medium">Status</div>
-              <div className="px-4 py-3 w-24 font-medium text-right">Actions</div>
-           </div>
-           <div className="flex-1">
-             <AutoSizer>
-               {({ height, width }) => (
-                 <List
-                   style={{ height, width }}
-                   rowCount={leads.length}
-                   rowHeight={72}
-                   rowComponent={DesktopRow}
-                   rowProps={{ data: itemData }}
-                 />
-               )}
-             </AutoSizer>
-           </div>
+        <div className="hidden md:block overflow-auto flex-1">
+          <table className="w-full text-sm text-left">
+            <thead className="text-xs text-textSec uppercase bg-gray-50 sticky top-0 z-10 shadow-sm">
+              <tr>
+                <th className="px-4 py-3 w-10">
+                  <button onClick={handleSelectAll} className="text-textSec hover:text-textMain">
+                    {selectedLeadIds.size === leads.length && leads.length > 0 ? <CheckSquare size={16}/> : <Square size={16}/>}
+                  </button>
+                </th>
+                <th className="px-4 py-3 font-medium">Name</th>
+                <th className="px-4 py-3 font-medium">Details</th>
+                <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {leads.map((lead) => (
+                <tr key={lead.id} className={`group hover:bg-blue-50/30 transition-colors ${selectedLeadIds.has(lead.id) ? 'bg-blue-50/20' : ''}`}>
+                  <td className="px-4 py-3 align-top">
+                    <button onClick={() => handleSelectLead(lead.id)} className={`mt-1 ${selectedLeadIds.has(lead.id) ? 'text-googleBlue' : 'text-gray-300 hover:text-gray-400'}`}>
+                       {selectedLeadIds.has(lead.id) ? <CheckSquare size={16}/> : <Square size={16}/>}
+                    </button>
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    <div className="font-medium text-textMain">{lead.name}</div>
+                    <div className="text-xs text-textSec mt-0.5 flex items-center gap-1">
+                      <Sparkles size={10} className="text-yellow-500"/> {lead.rating}
+                      <span className="mx-1">•</span> {lead.category}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    <div className="space-y-1">
+                       <div className="flex items-center gap-1.5 text-xs text-textSec">
+                         <MapPin size={12} /> {lead.address}
+                       </div>
+                       {lead.phone !== 'N/A' && (
+                         <div className="flex items-center gap-1.5 text-xs text-textSec">
+                           <MessageCircle size={12} className="text-waGreen"/> {lead.phone}
+                         </div>
+                       )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                     <select 
+                      value={lead.status}
+                      onChange={(e) => handleStatusChange(lead.id, e.target.value as any)}
+                      className={`text-xs font-medium px-2 py-1 rounded-full border-none outline-none cursor-pointer
+                        ${lead.status === 'New' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100'}
+                        ${lead.status === 'Contacted' ? 'bg-green-100 text-green-700' : ''}
+                      `}
+                     >
+                       <option value="New">New</option>
+                       <option value="Contacted">Contacted</option>
+                       <option value="Converted">Converted</option>
+                       <option value="Invalid">Invalid</option>
+                     </select>
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleWhatsAppAction(lead)}
+                        className="p-1.5 text-waGreen hover:bg-green-50 rounded-lg transition-colors"
+                        title="Send Message using Template"
+                      >
+                         <MessageCircle size={18} />
+                      </button>
+                      <button
+                         onClick={() => handleDeleteLead(lead.id)}
+                         className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
 
         {/* Mobile Card View */}
-        <div className="md:hidden flex-1 h-full pb-20">
-           <AutoSizer>
-             {({ height, width }) => (
-               <List
-                 style={{ height, width }}
-                 rowCount={leads.length}
-                 rowHeight={220}
-                 rowComponent={MobileRow}
-                 rowProps={{ data: itemData }}
-               />
-             )}
-           </AutoSizer>
+        <div className="md:hidden overflow-auto flex-1 space-y-3 pb-20">
+           {leads.map((lead) => (
+             <div key={lead.id} className={`bg-white p-4 rounded-xl shadow-sm border border-gray-100 relative ${selectedLeadIds.has(lead.id) ? 'ring-2 ring-googleBlue' : ''}`}>
+                <div className="flex justify-between items-start mb-2">
+                   <div className="flex items-start gap-3">
+                      <button onClick={() => handleSelectLead(lead.id)} className={`mt-1 ${selectedLeadIds.has(lead.id) ? 'text-googleBlue' : 'text-gray-300'}`}>
+                         {selectedLeadIds.has(lead.id) ? <CheckSquare size={20}/> : <Square size={20}/>}
+                      </button>
+                      <div>
+                        <h4 className="font-medium text-textMain">{lead.name}</h4>
+                        <div className="text-xs text-textSec flex items-center gap-1 mt-1">
+                          <Sparkles size={10} className="text-yellow-500"/> {lead.rating} • {lead.category}
+                        </div>
+                      </div>
+                   </div>
+                   <select 
+                      value={lead.status}
+                      onChange={(e) => handleStatusChange(lead.id, e.target.value as any)}
+                      className={`text-[10px] font-bold px-2 py-1 rounded-full border-none outline-none
+                        ${lead.status === 'New' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}
+                        ${lead.status === 'Contacted' ? 'bg-green-100 text-green-700' : ''}
+                      `}
+                   >
+                     <option value="New">New</option>
+                     <option value="Contacted">Contacted</option>
+                     <option value="Converted">Converted</option>
+                     <option value="Invalid">Invalid</option>
+                   </select>
+                </div>
+                
+                <div className="space-y-2 mt-3 pl-8 border-l-2 border-gray-100 ml-2">
+                   <div className="flex items-center gap-2 text-xs text-textSec">
+                     <MapPin size={12} className="text-gray-400"/> {lead.address}
+                   </div>
+                   {lead.phone !== 'N/A' && (
+                     <div className="flex items-center gap-2 text-xs text-textSec">
+                       <MessageCircle size={12} className="text-waGreen"/> {lead.phone}
+                     </div>
+                   )}
+                </div>
+
+                <div className="flex justify-end gap-3 mt-4 pt-3 border-t border-gray-50">
+                   <button
+                     onClick={() => handleWhatsAppAction(lead)}
+                     className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-waGreen rounded-lg text-xs font-medium hover:bg-green-100"
+                   >
+                      <MessageCircle size={14} /> Message
+                   </button>
+                   <button
+                      onClick={() => handleDeleteLead(lead.id)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-500 rounded-lg text-xs font-medium hover:bg-red-100"
+                   >
+                     <Trash2 size={14} /> Delete
+                   </button>
+                </div>
+             </div>
+           ))}
         </div>
       </div>
       
