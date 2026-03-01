@@ -41,8 +41,10 @@ import {
   Rocket,
   CheckSquare,
   Square,
-  Settings2
+  Settings2,
+  QrCode
 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { StatsCard } from './components/StatsCard';
 import { OnboardingModal } from './components/OnboardingModal';
 import { Toast, ToastType } from './components/Toast';
@@ -245,6 +247,8 @@ const App: React.FC = () => {
   const [showTemplateEditor, setShowTemplateEditor] = useState(false);
   const [bulkQueue, setBulkQueue] = useState<Lead[]>([]);
   const [isBulkSending, setIsBulkSending] = useState(false);
+  const [showQrCode, setShowQrCode] = useState(false);
+  const qrContainerRef = useRef<HTMLDivElement>(null);
 
   // --- EFFECTS ---
 
@@ -1698,18 +1702,113 @@ const App: React.FC = () => {
                  : <span className="text-gray-400 italic">Enter phone & message in the Direct Chat box to generate a link...</span>}
              </div>
              
-             <button 
-               onClick={() => {
-                  const link = `https://wa.me/${waDirectPhone.replace(/\D/g,'')}${waDirectMsg ? `?text=${encodeURIComponent(waDirectMsg)}` : ''}`;
-                  navigator.clipboard.writeText(link);
-                  addToast("Link copied to clipboard", 'success');
-               }}
-               className="w-full py-3 bg-white border border-gray-200 text-textMain rounded-xl font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
-             >
-               <Copy size={18}/> Copy Link
-             </button>
+             <div className="flex gap-2">
+                <button 
+                  onClick={() => {
+                     const link = `https://wa.me/${waDirectPhone.replace(/\D/g,'')}${waDirectMsg ? `?text=${encodeURIComponent(waDirectMsg)}` : ''}`;
+                     navigator.clipboard.writeText(link);
+                     addToast("Link copied to clipboard", 'success');
+                  }}
+                  className="flex-1 py-3 bg-white border border-gray-200 text-textMain rounded-xl font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+                >
+                  <Copy size={18}/> Copy Link
+                </button>
+                <button 
+                  onClick={() => {
+                    if(!waDirectPhone) { addToast("Enter a phone number first", 'warning'); return; }
+                    setShowQrCode(true);
+                  }}
+                  className="px-4 py-3 bg-blue-50 text-googleBlue rounded-xl font-bold hover:bg-blue-100 transition-all flex items-center justify-center border border-blue-100"
+                  title="Generate QR Code"
+                >
+                  <QrCode size={18}/>
+                </button>
+             </div>
           </div>
        </div>
+
+       {/* QR Code Modal Overlay */}
+       {showQrCode && (
+         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in">
+            <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl animate-scale-in text-center space-y-6">
+               <div className="flex justify-between items-center">
+                  <h3 className="text-xl font-bold text-textMain">WhatsApp QR Code</h3>
+                  <button onClick={() => setShowQrCode(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                     <X size={20} className="text-gray-400" />
+                  </button>
+               </div>
+               
+               <div ref={qrContainerRef} className="bg-white p-6 rounded-2xl border-2 border-gray-50 inline-block mx-auto shadow-sm">
+                  <QRCodeSVG 
+                    value={`https://wa.me/${waDirectPhone.replace(/\D/g,'')}${waDirectMsg ? `?text=${encodeURIComponent(waDirectMsg)}` : ''}`}
+                    size={200}
+                    level="H"
+                    includeMargin={true}
+                  />
+               </div>
+
+               <div className="space-y-2">
+                  <p className="text-sm font-medium text-textMain">Scan to start chat</p>
+                  <p className="text-xs text-textSec">Share this QR code with your leads or customers to let them message you instantly.</p>
+               </div>
+
+               <button 
+                 onClick={() => {
+                    const svg = qrContainerRef.current?.querySelector('svg');
+                    if (svg) {
+                      try {
+                        const svgData = new XMLSerializer().serializeToString(svg);
+                        const canvas = document.createElement("canvas");
+                        const ctx = canvas.getContext("2d");
+                        const img = new Image();
+                        
+                        // Use a blob instead of btoa for better Unicode support
+                        const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+                        const url = URL.createObjectURL(svgBlob);
+                        
+                        img.onload = () => {
+                          const highResSize = 1024;
+                          canvas.width = highResSize;
+                          canvas.height = highResSize;
+                          if (ctx) {
+                            // Fill background with white since SVGs are often transparent
+                            ctx.fillStyle = "white";
+                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                            
+                            // Draw the image scaled to high resolution
+                            ctx.drawImage(img, 0, 0, highResSize, highResSize);
+                            
+                            const pngFile = canvas.toDataURL("image/png");
+                            const downloadLink = document.createElement("a");
+                            downloadLink.download = `whatsapp-qr-${waDirectPhone.replace(/\D/g,'') || 'code'}.png`;
+                            downloadLink.href = pngFile;
+                            downloadLink.click();
+                            
+                            // Cleanup
+                            URL.revokeObjectURL(url);
+                            addToast("High-resolution QR Code downloaded", 'success');
+                          }
+                        };
+                        img.onerror = () => {
+                          addToast("Failed to process QR image", 'error');
+                          URL.revokeObjectURL(url);
+                        };
+                        img.src = url;
+                      } catch (err) {
+                        console.error("QR Download Error:", err);
+                        addToast("Could not download QR code", 'error');
+                      }
+                    } else {
+                      addToast("QR code element not found", 'error');
+                    }
+                 }}
+                 className="w-full py-3 bg-googleBlue text-white rounded-xl font-bold hover:bg-blue-600 transition-all flex items-center justify-center gap-2"
+               >
+                 <Download size={18} /> Download QR Code
+               </button>
+            </div>
+         </div>
+       )}
     </div>
   );
 
