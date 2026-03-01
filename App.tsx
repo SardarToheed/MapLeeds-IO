@@ -103,6 +103,41 @@ const App: React.FC = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   
+  // ROI Calculator State
+  const [roiLeads, setRoiLeads] = useState<number>(1000);
+  const [roiConversion, setRoiConversion] = useState<number>(5);
+  const [roiDealValue, setRoiDealValue] = useState<number>(1000);
+
+  // Live Activity State
+  const [liveActivities, setLiveActivities] = useState([
+    { id: 1, text: '24 Leads for "Dentists in London"', color: 'text-googleBlue' },
+    { id: 2, text: '18 Leads for "Real Estate in Dubai"', color: 'text-googleGreen' },
+    { id: 3, text: '42 Leads for "Restaurants in New York"', color: 'text-googleYellow' },
+    { id: 4, text: '12 Leads for "Gyms in Sydney"', color: 'text-googleRed' },
+  ]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const colors = ['text-googleBlue', 'text-googleGreen', 'text-googleYellow', 'text-googleRed'];
+      const cities = ['London', 'Dubai', 'New York', 'Sydney', 'Paris', 'Tokyo', 'Berlin', 'Toronto', 'Singapore', 'Mumbai'];
+      const niches = ['Dentists', 'Real Estate', 'Restaurants', 'Gyms', 'Plumbers', 'Lawyers', 'Accountants', 'Cafes', 'Hotels', 'Spas'];
+      
+      const newActivity = {
+        id: Date.now(),
+        text: `${Math.floor(Math.random() * 50) + 5} Leads for "${niches[Math.floor(Math.random() * niches.length)]} in ${cities[Math.floor(Math.random() * cities.length)]}"`,
+        color: colors[Math.floor(Math.random() * colors.length)]
+      };
+
+      setLiveActivities(prev => {
+        const updated = [newActivity, ...prev];
+        if (updated.length > 8) return updated.slice(0, 8);
+        return updated;
+      });
+    }, 3500);
+
+    return () => clearInterval(interval);
+  }, []);
+  
   useEffect(() => {
     const savedProfile = localStorage.getItem('mapleads_user_profile');
     const today = new Date().toISOString().split('T')[0];
@@ -1164,10 +1199,10 @@ const App: React.FC = () => {
               </div>
               <p className="text-sm text-textSec italic mb-6">"MapLeads has completely transformed our B2B sales process. We extracted 500+ leads in under 10 minutes and closed 3 deals in the first week."</p>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-googleBlue font-bold">JD</div>
+                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-googleBlue font-bold">MC</div>
                 <div>
-                  <p className="text-sm font-bold text-textMain">John Doe</p>
-                  <p className="text-xs text-textSec">Founder, Growth Agency</p>
+                  <p className="text-sm font-bold text-textMain">Marcus Chen</p>
+                  <p className="text-xs text-textSec">Founder, Elevate Digital</p>
                 </div>
               </div>
             </div>
@@ -1177,10 +1212,10 @@ const App: React.FC = () => {
               </div>
               <p className="text-sm text-textSec italic mb-6">"The Google Maps scraper is incredibly accurate. Combined with the AI campaign writer, our response rates have jumped from 2% to 15%."</p>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-googleGreen font-bold">SM</div>
+                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-googleGreen font-bold">ER</div>
                 <div>
-                  <p className="text-sm font-bold text-textMain">Sarah Miller</p>
-                  <p className="text-xs text-textSec">Marketing Director, Tech Solutions</p>
+                  <p className="text-sm font-bold text-textMain">Elena Rodriguez</p>
+                  <p className="text-xs text-textSec">VP of Marketing, Nexus Software</p>
                 </div>
               </div>
             </div>
@@ -1190,10 +1225,10 @@ const App: React.FC = () => {
               </div>
               <p className="text-sm text-textSec italic mb-6">"The WhatsApp marketing tool is a game-changer. We can now reach out to local businesses instantly with personalized messages."</p>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold">RK</div>
+                <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold">DO</div>
                 <div>
-                  <p className="text-sm font-bold text-textMain">Robert King</p>
-                  <p className="text-xs text-textSec">Sales Lead, Local SEO Pros</p>
+                  <p className="text-sm font-bold text-textMain">David O'Connor</p>
+                  <p className="text-xs text-textSec">Head of Sales, Apex Local SEO</p>
                 </div>
               </div>
             </div>
@@ -1207,22 +1242,12 @@ const App: React.FC = () => {
             <p className="text-xs font-mono tracking-wider uppercase opacity-80">Live Activity</p>
           </div>
           <div className="mt-3 flex gap-8 overflow-x-auto no-scrollbar whitespace-nowrap">
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-googleBlue font-bold">Recently Found:</span>
-              <span className="opacity-90">24 Leads for "Dentists in London"</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-googleGreen font-bold">Recently Found:</span>
-              <span className="opacity-90">18 Leads for "Real Estate in Dubai"</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-googleYellow font-bold">Recently Found:</span>
-              <span className="opacity-90">42 Leads for "Restaurants in New York"</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-googleRed font-bold">Recently Found:</span>
-              <span className="opacity-90">12 Leads for "Gyms in Sydney"</span>
-            </div>
+            {liveActivities.map((activity) => (
+              <div key={activity.id} className="flex items-center gap-2 text-sm animate-fade-in">
+                <span className={`${activity.color} font-bold`}>Recently Found:</span>
+                <span className="opacity-90">{activity.text}</span>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -1267,32 +1292,53 @@ const App: React.FC = () => {
               </p>
               <div className="space-y-6">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Monthly Leads Extracted</label>
-                  <input type="range" min="100" max="10000" step="100" className="w-full accent-googleBlue" />
+                  <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Monthly Leads Extracted: {roiLeads}</label>
+                  <input 
+                    type="range" 
+                    min="100" 
+                    max="10000" 
+                    step="100" 
+                    value={roiLeads}
+                    onChange={(e) => setRoiLeads(Number(e.target.value))}
+                    className="w-full accent-googleBlue" 
+                  />
                   <div className="flex justify-between text-xs mt-2 text-gray-400">
                     <span>100</span>
-                    <span>5,000</span>
                     <span>10,000</span>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Conversion Rate (%)</label>
-                  <input type="range" min="1" max="20" step="1" className="w-full accent-googleGreen" />
+                  <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Conversion Rate: {roiConversion}%</label>
+                  <input 
+                    type="range" 
+                    min="1" 
+                    max="20" 
+                    step="1" 
+                    value={roiConversion}
+                    onChange={(e) => setRoiConversion(Number(e.target.value))}
+                    className="w-full accent-googleGreen" 
+                  />
                   <div className="flex justify-between text-xs mt-2 text-gray-400">
                     <span>1%</span>
-                    <span>10%</span>
                     <span>20%</span>
                   </div>
                 </div>
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Average Deal Value ($)</label>
-                  <input type="number" defaultValue="1000" className="w-full bg-gray-800 border-gray-700 rounded-lg p-3 text-sm focus:ring-2 focus:ring-googleBlue outline-none" />
+                  <input 
+                    type="number" 
+                    value={roiDealValue}
+                    onChange={(e) => setRoiDealValue(Number(e.target.value))}
+                    className="w-full bg-gray-800 border-gray-700 rounded-lg p-3 text-sm focus:ring-2 focus:ring-googleBlue outline-none" 
+                  />
                 </div>
               </div>
             </div>
             <div className="flex-1 bg-gray-800/50 rounded-2xl p-8 flex flex-col justify-center border border-gray-700">
               <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Estimated Monthly Revenue</p>
-              <h4 className="text-5xl font-bold text-googleBlue mb-4">$25,000</h4>
+              <h4 className="text-5xl font-bold text-googleBlue mb-4">
+                ${(roiLeads * (roiConversion / 100) * roiDealValue).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </h4>
               <p className="text-xs text-gray-400 leading-relaxed">
                 By automating your <strong>sales prospecting</strong>, you save over 40 hours of manual work per month while scaling your outreach.
               </p>
