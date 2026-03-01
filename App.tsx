@@ -1086,19 +1086,18 @@ const App: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-4 py-3 align-top">
-                     <select 
-                      value={lead.status}
-                      onChange={(e) => handleStatusChange(lead.id, e.target.value as any)}
-                      className={`text-xs font-medium px-2 py-1 rounded-full border-none outline-none cursor-pointer
-                        ${lead.status === 'New' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100'}
-                        ${lead.status === 'Contacted' ? 'bg-green-100 text-green-700' : ''}
-                      `}
-                     >
-                       <option value="New">New</option>
-                       <option value="Contacted">Contacted</option>
-                       <option value="Converted">Converted</option>
-                       <option value="Invalid">Invalid</option>
-                     </select>
+                      <CustomSelect 
+                        value={lead.status}
+                        onChange={(val) => handleStatusChange(lead.id, val as any)}
+                        options={['New', 'Contacted', 'Converted', 'Invalid']}
+                        compact
+                        className={`
+                          ${lead.status === 'New' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}
+                          ${lead.status === 'Contacted' ? 'bg-green-100 text-green-700' : ''}
+                          ${lead.status === 'Converted' ? 'bg-emerald-100 text-emerald-700' : ''}
+                          ${lead.status === 'Invalid' ? 'bg-red-100 text-red-700' : ''}
+                        `}
+                      />
                   </td>
                   <td className="px-4 py-3 align-top">
                     <div className="flex items-center gap-2">
@@ -1139,19 +1138,18 @@ const App: React.FC = () => {
                         </div>
                       </div>
                    </div>
-                   <select 
+                   <CustomSelect 
                       value={lead.status}
-                      onChange={(e) => handleStatusChange(lead.id, e.target.value as any)}
-                      className={`text-[10px] font-bold px-2 py-1 rounded-full border-none outline-none
+                      onChange={(val) => handleStatusChange(lead.id, val as any)}
+                      options={['New', 'Contacted', 'Converted', 'Invalid']}
+                      compact
+                      className={`
                         ${lead.status === 'New' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}
                         ${lead.status === 'Contacted' ? 'bg-green-100 text-green-700' : ''}
+                        ${lead.status === 'Converted' ? 'bg-emerald-100 text-emerald-700' : ''}
+                        ${lead.status === 'Invalid' ? 'bg-red-100 text-red-700' : ''}
                       `}
-                   >
-                     <option value="New">New</option>
-                     <option value="Contacted">Contacted</option>
-                     <option value="Converted">Converted</option>
-                     <option value="Invalid">Invalid</option>
-                   </select>
+                   />
                 </div>
                 
                 <div className="space-y-2 mt-3 pl-8 border-l-2 border-gray-100 ml-2">

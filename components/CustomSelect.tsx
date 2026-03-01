@@ -6,9 +6,18 @@ interface CustomSelectProps {
   onChange: (value: string) => void;
   options: string[];
   placeholder?: string;
+  className?: string;
+  compact?: boolean;
 }
 
-export const CustomSelect: React.FC<CustomSelectProps> = ({ value, onChange, options, placeholder }) => {
+export const CustomSelect: React.FC<CustomSelectProps> = ({ 
+  value, 
+  onChange, 
+  options, 
+  placeholder,
+  className = "",
+  compact = false
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -23,22 +32,27 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({ value, onChange, opt
   }, []);
 
   return (
-    <div className="relative" ref={containerRef}>
+    <div className={`relative ${compact ? 'w-auto' : 'w-full'}`} ref={containerRef}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full p-3 flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg transition-all
-          ${isOpen ? 'bg-white border-googleBlue ring-1 ring-googleBlue' : 'hover:bg-white focus:bg-white'}
+        className={`flex items-center justify-between transition-all outline-none
+          ${compact ? 'px-2 py-1 rounded-full text-xs font-medium' : 'w-full p-3 bg-gray-50 border border-gray-200 rounded-lg'}
+          ${isOpen && !compact ? 'bg-white border-googleBlue ring-1 ring-googleBlue' : ''}
+          ${!isOpen && !compact ? 'hover:bg-white focus:bg-white' : ''}
+          ${className}
         `}
       >
-        <span className={`text-sm ${value ? 'text-textMain' : 'text-textSec'}`}>
-          {value || placeholder || 'Select an option'}
+        <span className={`${compact ? '' : value ? 'text-textMain' : 'text-textSec'} truncate mr-1`}>
+          {value || placeholder || 'Select'}
         </span>
-        <ChevronDown size={16} className={`text-textSec transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown size={compact ? 12 : 16} className={`text-current opacity-60 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-100 rounded-lg shadow-xl max-h-60 overflow-auto animate-in fade-in zoom-in-95 duration-100 origin-top">
+        <div className={`absolute z-50 mt-1 bg-white border border-gray-100 rounded-lg shadow-xl max-h-60 overflow-auto animate-in fade-in zoom-in-95 duration-100 origin-top
+          ${compact ? 'min-w-[120px] right-0' : 'w-full left-0'}
+        `}>
           <ul className="py-1">
             {options.map((option) => (
               <li key={option}>

@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { Lead } from '../types';
 import { CheckSquare, Square, Sparkles, MapPin, MessageCircle, Trash2 } from 'lucide-react';
+import { CustomSelect } from './CustomSelect';
 
 interface LeadRowProps {
   lead: Lead;
@@ -48,19 +49,18 @@ export const LeadRow: React.FC<LeadRowProps> = memo(({
         </div>
       </div>
       <div className="px-4 py-3 w-32 flex-shrink-0">
-         <select 
+         <CustomSelect 
           value={lead.status}
-          onChange={(e) => onStatusChange(lead.id, e.target.value as any)}
-          className={`text-xs font-medium px-2 py-1 rounded-full border-none outline-none cursor-pointer w-full
+          onChange={(val) => onStatusChange(lead.id, val as any)}
+          options={['New', 'Contacted', 'Converted', 'Invalid']}
+          compact
+          className={`w-full
             ${lead.status === 'New' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100'}
             ${lead.status === 'Contacted' ? 'bg-green-100 text-green-700' : ''}
+            ${lead.status === 'Converted' ? 'bg-emerald-100 text-emerald-700' : ''}
+            ${lead.status === 'Invalid' ? 'bg-red-100 text-red-700' : ''}
           `}
-         >
-           <option value="New">New</option>
-           <option value="Contacted">Contacted</option>
-           <option value="Converted">Converted</option>
-           <option value="Invalid">Invalid</option>
-         </select>
+         />
       </div>
       <div className="px-4 py-3 w-24 flex-shrink-0 flex justify-end">
         <div className="flex items-center gap-2">
