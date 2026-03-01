@@ -12,7 +12,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onClose }) => 
     {
       title: "Welcome to MapLeads IO",
       description: "The intelligent tool to find local businesses on Google Maps and connect via WhatsApp instantly.",
-      icon: <MapPin size={40} className="text-googleRed" />,
+      icon: <img 
+        src="/api/attachments/42071665-2747-4934-8c86-664448557342" 
+        alt="MapLeads Logo" 
+        className="w-16 h-16 rounded-2xl shadow-lg shadow-blue-500/20 object-cover"
+        referrerPolicy="no-referrer"
+      />,
       bg: "bg-red-50",
     },
     {

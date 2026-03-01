@@ -1401,9 +1401,12 @@ const App: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 max-w-6xl mx-auto px-4">
             <div className="col-span-1 md:col-span-2 space-y-4">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-googleBlue rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-sm">
-                  M
-                </div>
+                <img 
+                  src="/api/attachments/42071665-2747-4934-8c86-664448557342" 
+                  alt="MapLeads Logo" 
+                  className="w-8 h-8 rounded-lg shadow-sm shadow-blue-500/10 object-cover"
+                  referrerPolicy="no-referrer"
+                />
                 <span className="text-xl font-bold text-textMain tracking-tight">MapLeads</span>
               </div>
               <p className="text-sm text-textSec leading-relaxed max-w-md">
@@ -2349,9 +2352,12 @@ const App: React.FC = () => {
         <div className="h-full flex flex-col">
           <div className="h-20 flex items-center px-8 border-b border-gray-50">
              <div className="flex items-center gap-3 text-googleBlue">
-               <div className="p-2 bg-blue-600 rounded-xl text-white shadow-lg shadow-blue-500/30">
-                 <MapPin className="fill-current" size={24} />
-               </div>
+               <img 
+                 src="/api/attachments/42071665-2747-4934-8c86-664448557342" 
+                 alt="MapLeads Logo" 
+                 className="w-10 h-10 rounded-xl shadow-lg shadow-blue-500/20 object-cover"
+                 referrerPolicy="no-referrer"
+               />
                <span className="text-2xl font-bold tracking-tight text-gray-900">Map<span className="text-blue-600">Leads</span></span>
              </div>
           </div>
@@ -2409,9 +2415,12 @@ const App: React.FC = () => {
            <div className="flex items-center gap-4">
              {/* Mobile Logo (since sidebar is hidden) */}
              <div className="md:hidden flex items-center gap-2 text-googleBlue">
-               <div className="p-1.5 bg-blue-600 rounded-lg text-white shadow-md shadow-blue-500/30">
-                 <MapPin className="fill-current" size={18} />
-               </div>
+               <img 
+                 src="/api/attachments/42071665-2747-4934-8c86-664448557342" 
+                 alt="MapLeads Logo" 
+                 className="w-8 h-8 rounded-lg shadow-md shadow-blue-500/20 object-cover"
+                 referrerPolicy="no-referrer"
+               />
                <span className="text-lg font-bold tracking-tight text-gray-900">Map<span className="text-blue-600">Leads</span></span>
              </div>
 
