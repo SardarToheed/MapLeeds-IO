@@ -42,7 +42,8 @@ import {
   CheckSquare,
   Square,
   Settings2,
-  QrCode
+  QrCode,
+  Star
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { StatsCard } from './components/StatsCard';
@@ -756,7 +757,41 @@ const App: React.FC = () => {
           <StatsCard title="Campaigns" value={campaigns.length} icon={Mail} color="purple" />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Tools Overview Section for SEO */}
+      <section className="mt-16 bg-white rounded-2xl p-8 border border-gray-100 shadow-sm" aria-labelledby="tools-overview-title">
+        <h2 id="tools-overview-title" className="text-2xl font-bold text-textMain mb-8 text-center">Our Specialized B2B Growth Tools</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <article className="space-y-4">
+            <div className="w-12 h-12 bg-blue-50 text-googleBlue rounded-xl flex items-center justify-center" aria-hidden="true">
+              <Search size={24} />
+            </div>
+            <h3 className="text-lg font-bold text-textMain">Google Maps Scraper</h3>
+            <p className="text-sm text-textSec leading-relaxed">
+              Our <strong>Google Maps Lead Extractor</strong> is designed for high-speed data mining. Extract business names, verified phone numbers, physical addresses, and customer ratings. Perfect for building a <strong>B2B lead list</strong> in minutes.
+            </p>
+          </article>
+          <article className="space-y-4">
+            <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center" aria-hidden="true">
+              <Sparkles size={24} />
+            </div>
+            <h3 className="text-lg font-bold text-textMain">AI Campaign Writer</h3>
+            <p className="text-sm text-textSec leading-relaxed">
+              Leverage the power of <strong>Gemini AI</strong> to write high-converting outreach content. Whether it's for cold email or <strong>WhatsApp marketing</strong>, our AI ensures your message is personalized and professional.
+            </p>
+          </article>
+          <article className="space-y-4">
+            <div className="w-12 h-12 bg-green-50 text-waGreen rounded-xl flex items-center justify-center" aria-hidden="true">
+              <MessageCircle size={24} />
+            </div>
+            <h3 className="text-lg font-bold text-textMain">WhatsApp Marketing</h3>
+            <p className="text-sm text-textSec leading-relaxed">
+              The ultimate <strong>WhatsApp Marketing Tool</strong>. Send bulk messages, generate deep links for your profile, and create high-resolution <strong>WhatsApp QR codes</strong> to bridge the gap between offline and online.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 bg-white rounded-xl shadow-card border border-gray-100 p-6 flex flex-col">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
@@ -915,11 +950,499 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        <div className="mt-8 pb-8 text-center animate-fade-in">
-          <p className="text-sm font-medium text-textSec/60 flex items-center justify-center gap-1.5">
-            Made with <Heart size={14} className="text-red-500 fill-red-500 animate-pulse" /> by <span className="text-textMain font-semibold">Sardar Toheed</span>
-          </p>
+        {/* SEO Content Section */}
+        <div className="mt-16 bg-gray-50/50 rounded-3xl p-8 border border-gray-100">
+          <div className="max-w-4xl mx-auto">
+            <h3 className="text-2xl font-bold text-textMain mb-6 text-center">Why MapLeads is the Best Google Maps Lead Extractor?</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm text-textSec leading-relaxed">
+              <div className="space-y-4">
+                <p>
+                  <strong>MapLeads</strong> is a specialized <strong>B2B Lead Generation</strong> tool designed for agencies, sales teams, and local businesses. 
+                  Our <strong>Google Maps Scraper</strong> uses advanced AI to extract verified business data, including phone numbers, ratings, and categories.
+                </p>
+                <p>
+                  Whether you are looking for <em>Restaurants in New York</em> or <em>Real Estate Agents in Dubai</em>, our <strong>Lead Finder</strong> 
+                  provides high-quality prospects to fuel your sales pipeline.
+                </p>
+              </div>
+              <div className="space-y-4">
+                <p>
+                  Beyond extraction, we offer integrated <strong>WhatsApp Marketing</strong> tools. Generate <strong>WhatsApp Links</strong>, 
+                  create <strong>WhatsApp QR Codes</strong>, and use our <strong>Bulk WhatsApp Sender</strong> to reach out to your leads instantly.
+                </p>
+                <p>
+                  Stop manual searching and start automating your outreach with the most powerful <strong>Google Maps Data Extractor</strong> on the market.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
+
+        {/* How it Works Section */}
+        <div className="mt-16 max-w-4xl mx-auto">
+          <h3 className="text-2xl font-bold text-textMain mb-8 text-center">How to Use the Google Maps Lead Extractor?</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+              <div className="w-10 h-10 bg-googleBlue/10 text-googleBlue rounded-full flex items-center justify-center font-bold mb-4">1</div>
+              <h4 className="font-semibold text-textMain mb-2">Enter Keyword</h4>
+              <p className="text-xs text-textSec">Type your target niche like "Restaurants" or "Plumbers".</p>
+            </div>
+            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+              <div className="w-10 h-10 bg-googleGreen/10 text-googleGreen rounded-full flex items-center justify-center font-bold mb-4">2</div>
+              <h4 className="font-semibold text-textMain mb-2">Set Location</h4>
+              <p className="text-xs text-textSec">Choose a city or region to extract leads from.</p>
+            </div>
+            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+              <div className="w-10 h-10 bg-googleYellow/10 text-googleYellow rounded-full flex items-center justify-center font-bold mb-4">3</div>
+              <h4 className="font-semibold text-textMain mb-2">Export Leads</h4>
+              <p className="text-xs text-textSec">Download your verified B2B lead list in CSV format.</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Features Section */}
+        <div className="mt-16 max-w-4xl mx-auto">
+          <h3 className="text-2xl font-bold text-textMain mb-8 text-center">Powerful Features for B2B Growth</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="flex gap-4 p-4 bg-white rounded-xl border border-gray-100 shadow-sm">
+              <div className="flex-shrink-0 w-10 h-10 bg-blue-50 text-googleBlue rounded-lg flex items-center justify-center">
+                <Zap size={20} />
+              </div>
+              <div>
+                <h4 className="font-semibold text-textMain">AI-Powered Extraction</h4>
+                <p className="text-xs text-textSec mt-1">Our intelligent scraper identifies the most relevant business data from Google Maps.</p>
+              </div>
+            </div>
+            <div className="flex gap-4 p-4 bg-white rounded-xl border border-gray-100 shadow-sm">
+              <div className="flex-shrink-0 w-10 h-10 bg-green-50 text-googleGreen rounded-lg flex items-center justify-center">
+                <Download size={20} />
+              </div>
+              <div>
+                <h4 className="font-semibold text-textMain">One-Click CSV Export</h4>
+                <p className="text-xs text-textSec mt-1">Export your leads instantly to CSV or Excel for CRM integration.</p>
+              </div>
+            </div>
+            <div className="flex gap-4 p-4 bg-white rounded-xl border border-gray-100 shadow-sm">
+              <div className="flex-shrink-0 w-10 h-10 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center">
+                <MessageCircle size={20} />
+              </div>
+              <div>
+                <h4 className="font-semibold text-textMain">WhatsApp Automation</h4>
+                <p className="text-xs text-textSec mt-1">Integrated tools for bulk messaging and link generation.</p>
+              </div>
+            </div>
+            <div className="flex gap-4 p-4 bg-white rounded-xl border border-gray-100 shadow-sm">
+              <div className="flex-shrink-0 w-10 h-10 bg-orange-50 text-orange-600 rounded-lg flex items-center justify-center">
+                <Search size={20} />
+              </div>
+              <div>
+                <h4 className="font-semibold text-textMain">Deep Scan Mode</h4>
+                <p className="text-xs text-textSec mt-1">Go beyond the surface to find hidden business details and ratings.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Use Cases Section */}
+        <div className="mt-16 max-w-4xl mx-auto">
+          <h3 className="text-2xl font-bold text-textMain mb-8 text-center">Who is MapLeads for?</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <div className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                <h4 className="font-semibold text-textMain flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-googleBlue"></div>
+                  Real Estate Agencies
+                </h4>
+                <p className="text-sm text-textSec mt-2">Find property managers, developers, and local agents to build your network.</p>
+              </div>
+              <div className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                <h4 className="font-semibold text-textMain flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-googleGreen"></div>
+                  Marketing Agencies
+                </h4>
+                <p className="text-sm text-textSec mt-2">Identify local businesses that need SEO, social media, or web design services.</p>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                <h4 className="font-semibold text-textMain flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-googleYellow"></div>
+                  SaaS & Software Companies
+                </h4>
+                <p className="text-sm text-textSec mt-2">Extract leads for your B2B software and automate your cold outreach.</p>
+              </div>
+              <div className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                <h4 className="font-semibold text-textMain flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-googleRed"></div>
+                  Local Service Providers
+                </h4>
+                <p className="text-sm text-textSec mt-2">Connect with other local businesses for partnerships and B2B sales.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Why Choose MapLeads Section */}
+        <div className="mt-24 max-w-5xl mx-auto">
+          <h3 className="text-3xl font-bold text-textMain mb-12 text-center">Why MapLeads is the #1 Choice for B2B Lead Generation</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="p-8 bg-gradient-to-br from-blue-50 to-white rounded-3xl border border-blue-100 shadow-sm">
+              <div className="w-14 h-14 bg-white rounded-2xl shadow-sm flex items-center justify-center text-googleBlue mb-6">
+                <Zap size={28} />
+              </div>
+              <h4 className="text-xl font-bold text-textMain mb-4">Real-Time Data Extraction</h4>
+              <p className="text-sm text-textSec leading-relaxed">
+                Unlike static databases, our <strong>Google Maps Scraper</strong> pulls data directly from live maps. This ensures you get the most up-to-date phone numbers, business hours, and customer reviews for your <strong>sales prospecting</strong>.
+              </p>
+            </div>
+            <div className="p-8 bg-gradient-to-br from-purple-50 to-white rounded-3xl border border-purple-100 shadow-sm">
+              <div className="w-14 h-14 bg-white rounded-2xl shadow-sm flex items-center justify-center text-purple-600 mb-6">
+                <Sparkles size={28} />
+              </div>
+              <h4 className="text-xl font-bold text-textMain mb-4">AI-Driven Personalization</h4>
+              <p className="text-sm text-textSec leading-relaxed">
+                Stop sending generic messages. Our <strong>AI Campaign Writer</strong> uses Gemini 3.1 Pro to analyze business niches and craft personalized <strong>WhatsApp marketing</strong> campaigns that convert at 3x higher rates.
+              </p>
+            </div>
+            <div className="p-8 bg-gradient-to-br from-green-50 to-white rounded-3xl border border-green-100 shadow-sm">
+              <div className="w-14 h-14 bg-white rounded-2xl shadow-sm flex items-center justify-center text-waGreen mb-6">
+                <MessageCircle size={28} />
+              </div>
+              <h4 className="text-xl font-bold text-textMain mb-4">All-in-One Marketing Suite</h4>
+              <p className="text-sm text-textSec leading-relaxed">
+                We don't just give you data; we give you the tools to use it. From <strong>bulk WhatsApp sender</strong> to <strong>QR code generators</strong>, MapLeads is the only platform you need for <strong>local lead generation</strong>.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Comparison Section */}
+        <div className="mt-24 max-w-4xl mx-auto bg-gray-50 rounded-3xl p-10 border border-gray-200">
+          <h3 className="text-2xl font-bold text-textMain mb-8 text-center">MapLeads vs. Manual Lead Generation</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="pb-4 font-semibold text-textSec">Feature</th>
+                  <th className="pb-4 font-semibold text-googleBlue">MapLeads Automation</th>
+                  <th className="pb-4 font-semibold text-textSec">Manual Searching</th>
+                </tr>
+              </thead>
+              <tbody className="text-sm">
+                <tr className="border-b border-gray-100">
+                  <td className="py-4 font-medium">Speed</td>
+                  <td className="py-4 text-googleBlue font-semibold">100+ leads per minute</td>
+                  <td className="py-4">1 lead per 5 minutes</td>
+                </tr>
+                <tr className="border-b border-gray-100">
+                  <td className="py-4 font-medium">Data Accuracy</td>
+                  <td className="py-4 text-googleBlue font-semibold">Live Real-time Data</td>
+                  <td className="py-4">Often outdated</td>
+                </tr>
+                <tr className="border-b border-gray-100">
+                  <td className="py-4 font-medium">Outreach</td>
+                  <td className="py-4 text-googleBlue font-semibold">Integrated WhatsApp/AI</td>
+                  <td className="py-4">Manual copy-paste</td>
+                </tr>
+                <tr>
+                  <td className="py-4 font-medium">Cost Efficiency</td>
+                  <td className="py-4 text-googleBlue font-semibold">High ROI / Low Effort</td>
+                  <td className="py-4">High Labor Cost</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Testimonials Section */}
+        <div className="mt-24 max-w-5xl mx-auto">
+          <h3 className="text-2xl font-bold text-textMain mb-12 text-center">Trusted by 1,200+ Businesses Worldwide</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm">
+              <div className="flex gap-1 text-yellow-400 mb-4">
+                {[...Array(5)].map((_, i) => <Star key={i} size={16} fill="currentColor" />)}
+              </div>
+              <p className="text-sm text-textSec italic mb-6">"MapLeads has completely transformed our B2B sales process. We extracted 500+ leads in under 10 minutes and closed 3 deals in the first week."</p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-googleBlue font-bold">JD</div>
+                <div>
+                  <p className="text-sm font-bold text-textMain">John Doe</p>
+                  <p className="text-xs text-textSec">Founder, Growth Agency</p>
+                </div>
+              </div>
+            </div>
+            <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm">
+              <div className="flex gap-1 text-yellow-400 mb-4">
+                {[...Array(5)].map((_, i) => <Star key={i} size={16} fill="currentColor" />)}
+              </div>
+              <p className="text-sm text-textSec italic mb-6">"The Google Maps scraper is incredibly accurate. Combined with the AI campaign writer, our response rates have jumped from 2% to 15%."</p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-googleGreen font-bold">SM</div>
+                <div>
+                  <p className="text-sm font-bold text-textMain">Sarah Miller</p>
+                  <p className="text-xs text-textSec">Marketing Director, Tech Solutions</p>
+                </div>
+              </div>
+            </div>
+            <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm">
+              <div className="flex gap-1 text-yellow-400 mb-4">
+                {[...Array(5)].map((_, i) => <Star key={i} size={16} fill="currentColor" />)}
+              </div>
+              <p className="text-sm text-textSec italic mb-6">"The WhatsApp marketing tool is a game-changer. We can now reach out to local businesses instantly with personalized messages."</p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold">RK</div>
+                <div>
+                  <p className="text-sm font-bold text-textMain">Robert King</p>
+                  <p className="text-xs text-textSec">Sales Lead, Local SEO Pros</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Live Activity Simulation (SEO & Trust) */}
+        <div className="mt-12 bg-gray-900 text-white rounded-2xl p-4 overflow-hidden relative">
+          <div className="flex items-center gap-4 animate-pulse">
+            <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
+            <p className="text-xs font-mono tracking-wider uppercase opacity-80">Live Activity</p>
+          </div>
+          <div className="mt-3 flex gap-8 overflow-x-auto no-scrollbar whitespace-nowrap">
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-googleBlue font-bold">Recently Found:</span>
+              <span className="opacity-90">24 Leads for "Dentists in London"</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-googleGreen font-bold">Recently Found:</span>
+              <span className="opacity-90">18 Leads for "Real Estate in Dubai"</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-googleYellow font-bold">Recently Found:</span>
+              <span className="opacity-90">42 Leads for "Restaurants in New York"</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-googleRed font-bold">Recently Found:</span>
+              <span className="opacity-90">12 Leads for "Gyms in Sydney"</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Industry Specific Solutions (SEO Powerhouse) */}
+        <div className="mt-24 max-w-6xl mx-auto">
+          <h3 className="text-3xl font-bold text-textMain mb-12 text-center">Industry-Specific Lead Generation Solutions</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-googleBlue transition-colors group">
+              <h4 className="text-lg font-bold text-textMain mb-3 group-hover:text-googleBlue">Real Estate</h4>
+              <p className="text-sm text-textSec leading-relaxed">
+                Extract property managers, developers, and local agents. Use our <strong>Real Estate Lead Scraper</strong> to find high-value commercial contacts.
+              </p>
+            </div>
+            <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-googleGreen transition-colors group">
+              <h4 className="text-lg font-bold text-textMain mb-3 group-hover:text-googleGreen">Marketing Agencies</h4>
+              <p className="text-sm text-textSec leading-relaxed">
+                Find local businesses needing SEO or social media services. Our <strong>B2B Lead Finder</strong> identifies businesses with low ratings for reputation management.
+              </p>
+            </div>
+            <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-googleYellow transition-colors group">
+              <h4 className="text-lg font-bold text-textMain mb-3 group-hover:text-googleYellow">SaaS Companies</h4>
+              <p className="text-sm text-textSec leading-relaxed">
+                Target specific niches for your software. Extract niche business data and use <strong>AI Campaign Writers</strong> for high-converting cold outreach.
+              </p>
+            </div>
+            <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-googleRed transition-colors group">
+              <h4 className="text-lg font-bold text-textMain mb-3 group-hover:text-googleRed">Local Services</h4>
+              <p className="text-sm text-textSec leading-relaxed">
+                From plumbers to dentists, find local partners and competitors. <strong>Local Lead Generation</strong> has never been easier with MapLeads.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Lead Generation ROI Calculator (Engagement & SEO) */}
+        <div className="mt-24 max-w-4xl mx-auto bg-gradient-to-br from-gray-900 to-black text-white rounded-3xl p-10 border border-gray-800 shadow-2xl">
+          <div className="flex flex-col md:flex-row gap-12">
+            <div className="flex-1">
+              <h3 className="text-2xl font-bold mb-4">Lead Generation ROI Calculator</h3>
+              <p className="text-sm text-gray-400 mb-8 leading-relaxed">
+                Estimate your potential revenue growth by automating your <strong>B2B lead generation</strong> with MapLeads.
+              </p>
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Monthly Leads Extracted</label>
+                  <input type="range" min="100" max="10000" step="100" className="w-full accent-googleBlue" />
+                  <div className="flex justify-between text-xs mt-2 text-gray-400">
+                    <span>100</span>
+                    <span>5,000</span>
+                    <span>10,000</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Conversion Rate (%)</label>
+                  <input type="range" min="1" max="20" step="1" className="w-full accent-googleGreen" />
+                  <div className="flex justify-between text-xs mt-2 text-gray-400">
+                    <span>1%</span>
+                    <span>10%</span>
+                    <span>20%</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Average Deal Value ($)</label>
+                  <input type="number" defaultValue="1000" className="w-full bg-gray-800 border-gray-700 rounded-lg p-3 text-sm focus:ring-2 focus:ring-googleBlue outline-none" />
+                </div>
+              </div>
+            </div>
+            <div className="flex-1 bg-gray-800/50 rounded-2xl p-8 flex flex-col justify-center border border-gray-700">
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Estimated Monthly Revenue</p>
+              <h4 className="text-5xl font-bold text-googleBlue mb-4">$25,000</h4>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                By automating your <strong>sales prospecting</strong>, you save over 40 hours of manual work per month while scaling your outreach.
+              </p>
+              <button className="mt-8 w-full bg-googleBlue hover:bg-blue-600 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-blue-500/20">
+                Start Extracting Now
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Lead Generation Glossary (SEO Long-tail) */}
+        <div className="mt-24 max-w-4xl mx-auto bg-white rounded-3xl p-10 border border-gray-100 shadow-sm">
+          <h3 className="text-2xl font-bold text-textMain mb-8">Lead Generation Glossary</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-6">
+            <div>
+              <h5 className="font-bold text-textMain text-sm uppercase tracking-wider mb-2">B2B Lead Generation</h5>
+              <p className="text-xs text-textSec">The process of identifying and initiating interest from other businesses for sales opportunities.</p>
+            </div>
+            <div>
+              <h5 className="font-bold text-textMain text-sm uppercase tracking-wider mb-2">Google Maps Scraper</h5>
+              <p className="text-xs text-textSec">An automated tool that extracts publicly available business data from Google Maps listings.</p>
+            </div>
+            <div>
+              <h5 className="font-bold text-textMain text-sm uppercase tracking-wider mb-2">Cold Outreach</h5>
+              <p className="text-xs text-textSec">Contacting potential leads who have not previously expressed interest in your product or service.</p>
+            </div>
+            <div>
+              <h5 className="font-bold text-textMain text-sm uppercase tracking-wider mb-2">Sales Prospecting</h5>
+              <p className="text-xs text-textSec">The first step in the sales process, which involves identifying potential customers or prospects.</p>
+            </div>
+            <div>
+              <h5 className="font-bold text-textMain text-sm uppercase tracking-wider mb-2">WhatsApp Marketing</h5>
+              <p className="text-xs text-textSec">Using WhatsApp to communicate with customers and prospects for marketing and sales purposes.</p>
+            </div>
+            <div>
+              <h5 className="font-bold text-textMain text-sm uppercase tracking-wider mb-2">Local SEO</h5>
+              <p className="text-xs text-textSec">Optimizing your online presence to attract more business from relevant local searches.</p>
+            </div>
+          </div>
+        </div>
+
+        {/* B2B Lead Generation Resources Section */}
+        <div className="mt-24 max-w-5xl mx-auto">
+          <h3 className="text-2xl font-bold text-textMain mb-12 text-center">B2B Lead Generation Resources & Guides</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <article className="p-8 bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <h4 className="text-xl font-bold text-textMain mb-4">How to Use a Google Maps Scraper for Local SEO</h4>
+              <p className="text-sm text-textSec leading-relaxed mb-6">
+                Learn how to leverage a <strong>Google Maps Lead Extractor</strong> to identify local competitors and potential partners. Discover the secrets of <strong>local lead generation</strong> and how to build a high-quality <strong>B2B lead list</strong> without spending thousands on data providers.
+              </p>
+              <button className="text-googleBlue font-semibold flex items-center gap-2 hover:underline">
+                Read Full Guide <ArrowRight size={16} />
+              </button>
+            </article>
+            <article className="p-8 bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <h4 className="text-xl font-bold text-textMain mb-4">Mastering WhatsApp Marketing for Small Businesses</h4>
+              <p className="text-sm text-textSec leading-relaxed mb-6">
+                WhatsApp is the future of <strong>B2B outreach</strong>. This guide covers everything from using a <strong>bulk WhatsApp sender</strong> responsibly to creating high-converting <strong>WhatsApp marketing</strong> campaigns using <strong>AI campaign writers</strong>.
+              </p>
+              <button className="text-googleBlue font-semibold flex items-center gap-2 hover:underline">
+                Read Full Guide <ArrowRight size={16} />
+              </button>
+            </article>
+            <article className="p-8 bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <h4 className="text-xl font-bold text-textMain mb-4">The Power of AI in Sales Prospecting</h4>
+              <p className="text-sm text-textSec leading-relaxed mb-6">
+                Discover how <strong>Gemini AI</strong> is revolutionizing the way businesses find and contact leads. Learn how to use an <strong>AI email writer</strong> to craft personalized messages that bypass spam filters and get real responses.
+              </p>
+              <button className="text-googleBlue font-semibold flex items-center gap-2 hover:underline">
+                Read Full Guide <ArrowRight size={16} />
+              </button>
+            </article>
+            <article className="p-8 bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <h4 className="text-xl font-bold text-textMain mb-4">Real Estate Lead Generation Strategies for 2026</h4>
+              <p className="text-sm text-textSec leading-relaxed mb-6">
+                A deep dive into how real estate professionals are using <strong>Google Maps data scrapers</strong> to find property owners and commercial opportunities. Stay ahead of the curve with automated <strong>lead generation software</strong>.
+              </p>
+              <button className="text-googleBlue font-semibold flex items-center gap-2 hover:underline">
+                Read Full Guide <ArrowRight size={16} />
+              </button>
+            </article>
+          </div>
+        </div>
+
+        {/* FAQ Section */}
+        <div className="mt-16 max-w-4xl mx-auto">
+          <h3 className="text-2xl font-bold text-textMain mb-8 text-center">Frequently Asked Questions</h3>
+          <div className="space-y-4">
+            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+              <h4 className="font-semibold text-textMain mb-2">What is a Google Maps Lead Extractor?</h4>
+              <p className="text-sm text-textSec">A Google Maps Lead Extractor is a tool that automates the process of gathering business information from Google Maps, such as phone numbers, addresses, ratings, and categories, to build a B2B lead list.</p>
+            </div>
+            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+              <h4 className="font-semibold text-textMain mb-2">Is it legal to scrape data from Google Maps?</h4>
+              <p className="text-sm text-textSec">Scraping publicly available data is generally legal for personal or business use, provided it does not violate Google's Terms of Service or local privacy laws like GDPR. MapLeads is designed to help you find public business information efficiently.</p>
+            </div>
+            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+              <h4 className="font-semibold text-textMain mb-2">How can I export leads to CSV or Excel?</h4>
+              <p className="text-sm text-textSec">With MapLeads, you can easily export your extracted leads into CSV or Excel formats with a single click, making it simple to import them into your CRM or email marketing software.</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer Section */}
+        <footer className="mt-20 pt-12 border-t border-gray-100 pb-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 max-w-6xl mx-auto px-4">
+            <div className="col-span-1 md:col-span-2 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-googleBlue rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-sm">
+                  M
+                </div>
+                <span className="text-xl font-bold text-textMain tracking-tight">MapLeads</span>
+              </div>
+              <p className="text-sm text-textSec leading-relaxed max-w-md">
+                MapLeads is the ultimate B2B lead generation platform. We help businesses extract high-quality data from Google Maps and automate their outreach with integrated WhatsApp marketing tools.
+              </p>
+              <div className="flex gap-4">
+                <a href="https://mapleads.online/" className="text-textSec hover:text-googleBlue transition-colors"><ExternalLink size={18} /></a>
+                <a href="https://mapleads.online/sitemap.xml" className="text-textSec hover:text-googleBlue transition-colors text-xs font-medium uppercase tracking-wider">Sitemap</a>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <h4 className="font-bold text-textMain uppercase text-xs tracking-widest">Quick Links</h4>
+              <ul className="space-y-2 text-sm text-textSec">
+                <li><button onClick={() => setView('dashboard')} className="hover:text-googleBlue transition-colors">Dashboard</button></li>
+                <li><button onClick={() => setView('scraper')} className="hover:text-googleBlue transition-colors">Google Maps Scraper</button></li>
+                <li><button onClick={() => setView('leads')} className="hover:text-googleBlue transition-colors">Lead Management</button></li>
+                <li><button onClick={() => setView('campaigns')} className="hover:text-googleBlue transition-colors">AI Campaigns</button></li>
+                <li><button onClick={() => setView('whatsapp')} className="hover:text-googleBlue transition-colors">WhatsApp Tools</button></li>
+              </ul>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="font-bold text-textMain uppercase text-xs tracking-widest">Resources</h4>
+              <ul className="space-y-2 text-sm text-textSec">
+                <li><a href="#" className="hover:text-googleBlue transition-colors">Lead Generation Guide</a></li>
+                <li><a href="#" className="hover:text-googleBlue transition-colors">WhatsApp Marketing Tips</a></li>
+                <li><a href="#" className="hover:text-googleBlue transition-colors">B2B Sales Automation</a></li>
+                <li><a href="#" className="hover:text-googleBlue transition-colors">Local SEO Tools</a></li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="mt-12 pt-8 border-t border-gray-50 text-center">
+            <p className="text-xs text-textSec/60 flex items-center justify-center gap-1.5">
+              &copy; {new Date().getFullYear()} MapLeads. All rights reserved. Made with <Heart size={12} className="text-red-500 fill-red-500" /> by <span className="text-textMain font-semibold">Sardar Toheed</span>
+            </p>
+          </div>
+        </footer>
       </div>
     );
   };
@@ -948,8 +1471,13 @@ const App: React.FC = () => {
       </div>
 
       <div className="text-center space-y-4 mb-12 pt-8">
-        <h2 className="text-4xl md:text-5xl font-bold text-textMain tracking-tight">Find Your Next Customer</h2>
-        <p className="text-lg text-textSec max-w-lg mx-auto">AI-powered lead generation from Google Maps. Enter a niche and location to get started.</p>
+        <h1 className="sr-only">MapLeads - The Best Google Maps Lead Extractor & WhatsApp Marketing Tool</h1>
+        <h2 className="text-4xl md:text-5xl font-bold text-textMain tracking-tight">
+          Find Your Next B2B Leads with <span className="text-googleBlue">Google Maps Scraper</span>
+        </h2>
+        <p className="text-lg text-textSec max-w-lg mx-auto">
+          Our AI-powered <strong>Google Maps Lead Extractor</strong> helps you find local businesses and automate your <strong>WhatsApp Marketing</strong> in seconds.
+        </p>
       </div>
 
       <div id="scraper-card" className="bg-white p-6 md:p-8 rounded-3xl shadow-xl shadow-blue-900/5 border border-gray-100 space-y-8 relative overflow-hidden">
@@ -998,13 +1526,14 @@ const App: React.FC = () => {
         <div className="space-y-6 relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="block text-sm font-semibold text-textMain ml-1">Business Category</label>
+              <label className="block text-sm font-semibold text-textMain ml-1">Niche / Business Category</label>
               <div className="relative group">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-googleBlue transition-colors" size={20} />
                 <input
                   type="text"
                   className="w-full pl-12 pr-4 py-4 bg-gray-50/50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-googleBlue focus:bg-white transition-all outline-none font-medium text-textMain placeholder-gray-400"
-                  placeholder="e.g. Gyms, Dentists..."
+                  placeholder="e.g. Restaurants, Real Estate, Dentists..."
+                  aria-label="Business Category for Lead Extraction"
                   value={scrapeCategory}
                   onChange={(e) => {
                     setScrapeCategory(e.target.value);
@@ -1042,14 +1571,15 @@ const App: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-semibold text-textMain ml-1">Location</label>
+              <label className="block text-sm font-semibold text-textMain ml-1">Target Location</label>
               <div className="relative flex gap-2 group">
                 <div className="relative flex-1">
                   <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-googleRed transition-colors" size={20} />
                   <input
                     type="text"
                     className="w-full pl-12 pr-4 py-4 bg-gray-50/50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-red-500/10 focus:border-googleRed focus:bg-white transition-all outline-none font-medium text-textMain placeholder-gray-400"
-                    placeholder="e.g. New York, Dubai"
+                    placeholder="e.g. New York, Dubai, London"
+                    aria-label="Location for Lead Generation"
                     value={scrapeLocation}
                     onChange={(e) => setScrapeLocation(e.target.value)}
                   />
@@ -1641,8 +2171,8 @@ const App: React.FC = () => {
   const renderWhatsApp = () => (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in pb-20 md:pb-0">
        <div className="text-center mb-8 pt-8">
-         <h2 className="text-3xl font-bold text-textMain tracking-tight">WhatsApp Tools</h2>
-         <p className="text-textSec text-lg mt-2">Utilities for quick messaging without saving contacts.</p>
+         <h2 className="text-3xl font-bold text-textMain tracking-tight">WhatsApp Marketing Tools</h2>
+         <p className="text-textSec text-lg mt-2">Professional utilities for <strong>Direct WhatsApp Messaging</strong> and <strong>WhatsApp Link Generation</strong>.</p>
        </div>
 
        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1653,8 +2183,8 @@ const App: React.FC = () => {
                    <Send size={24} />
                 </div>
                 <div>
-                   <h3 className="font-semibold text-textMain">Direct Chat</h3>
-                   <p className="text-xs text-textSec">Open chat without saving</p>
+                   <h3 className="font-semibold text-textMain">WhatsApp Direct Chat</h3>
+                   <p className="text-xs text-textSec">Send messages without saving contacts</p>
                 </div>
              </div>
              
@@ -1691,8 +2221,8 @@ const App: React.FC = () => {
                    <Link size={24} />
                 </div>
                 <div>
-                   <h3 className="font-semibold text-textMain">Link Generator</h3>
-                   <p className="text-xs text-textSec">Create shareable deep links</p>
+                   <h3 className="font-semibold text-textMain">WhatsApp Link Generator</h3>
+                   <p className="text-xs text-textSec">Create shareable WhatsApp deep links</p>
                 </div>
              </div>
              

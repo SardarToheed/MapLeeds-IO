@@ -1,6 +1,6 @@
 {
-  "name": "MapLeads IO",
-  "description": "A powerful email and WhatsApp marketing tool that generates leads from location data using AI.",
+  "name": "MapLeads | Google Maps Lead Extractor",
+  "description": "MapLeads: The ultimate B2B lead generation suite. Features: 1. Google Maps Scraper for high-quality business data. 2. AI Campaign Writer for personalized outreach. 3. WhatsApp Marketing Tools for bulk messaging & QR generation.",
   "requestFramePermissions": [
     "geolocation"
   ]
