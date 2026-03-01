@@ -219,6 +219,7 @@ const App: React.FC = () => {
   const [scrapeLocationHints, setScrapeLocationHints] = useState('');
   const [scrapeMode, setScrapeMode] = useState<'fast' | 'deep' | 'extreme'>('fast');
   const [isScraping, setIsScraping] = useState(false);
+  const [isScrapingMore, setIsScrapingMore] = useState(false);
   const [scrapeProgress, setScrapeProgress] = useState(0);
   const [isLocating, setIsLocating] = useState(false);
   const [scrapeError, setScrapeError] = useState<string | null>(null);
@@ -413,7 +414,11 @@ const App: React.FC = () => {
       return;
     }
 
-    setIsScraping(true);
+    if (isLoadMore) {
+      setIsScrapingMore(true);
+    } else {
+      setIsScraping(true);
+    }
     setScrapeProgress(0);
     setScrapeError(null);
 
@@ -502,6 +507,7 @@ const App: React.FC = () => {
       addToast("Scraping failed. Please try again.", 'error');
     } finally {
       setIsScraping(false);
+      setIsScrapingMore(false);
     }
   };
 
@@ -943,7 +949,7 @@ const App: React.FC = () => {
       </div>
 
       <div id="scraper-card" className="bg-white p-6 md:p-8 rounded-3xl shadow-xl shadow-blue-900/5 border border-gray-100 space-y-8 relative overflow-hidden">
-        {isScraping && (
+        {(isScraping || isScrapingMore) && (
           <div className="absolute inset-0 bg-white/95 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-8 animate-fade-in">
              <div className="w-full max-w-md space-y-8 text-center">
                 <div className="relative w-24 h-24 mx-auto">
@@ -955,8 +961,15 @@ const App: React.FC = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <h3 className="text-2xl font-bold text-textMain">Finding Best Leads...</h3>
-                  <p className="text-textSec">Scanning Google Maps for <span className="font-medium text-googleBlue">{scrapeCategory}</span> in <span className="font-medium text-textMain">{scrapeLocation}</span></p>
+                  <h3 className="text-2xl font-bold text-textMain">
+                    {isScrapingMore ? "Expanding Search..." : "Finding Best Leads..."}
+                  </h3>
+                  <p className="text-textSec">
+                    {isScrapingMore 
+                      ? `Searching for even more ${scrapeCategory} in ${scrapeLocation}`
+                      : `Scanning Google Maps for ${scrapeCategory} in ${scrapeLocation}`
+                    }
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -1143,10 +1156,18 @@ const App: React.FC = () => {
            </button>
            <button 
             onClick={() => performScrape(true)} 
-            disabled={isScraping}
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-googleBlue bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+            disabled={isScraping || isScrapingMore}
+            className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all ${
+              isScrapingMore 
+                ? 'bg-blue-100 text-googleBlue ring-1 ring-blue-200' 
+                : 'text-googleBlue bg-blue-50 hover:bg-blue-100'
+            }`}
            >
-             {isScraping ? <Loader2 size={16} className="animate-spin"/> : <Plus size={16} />} More
+             {isScrapingMore ? (
+               <><Loader2 size={16} className="animate-spin"/> Loading More...</>
+             ) : (
+               <><Plus size={16} /> Load More</>
+             )}
            </button>
            <button 
             onClick={handleExport}
