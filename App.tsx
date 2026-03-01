@@ -48,10 +48,11 @@ import { OnboardingModal } from './components/OnboardingModal';
 import { Toast, ToastType } from './components/Toast';
 import { ConfirmationModal } from './components/ConfirmationModal';
 import { CustomSelect } from './components/CustomSelect';
+import { ProfileModal } from './components/ProfileModal';
 import Joyride, { CallBackProps, STATUS, Step } from 'react-joyride';
 import { searchBusinesses, generateEmailContent, hasApiKey, validateWhatsAppNumber, lookupLocation } from './services/geminiService';
 import { generateWhatsAppLink, openWhatsAppTab, isMobileDevice, shareContent, copyImageToClipboard } from './services/whatsappService';
-import { Lead, Campaign, ViewState, SearchHistoryItem } from './types';
+import { Lead, Campaign, ViewState, SearchHistoryItem, UserProfile } from './types';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 
 type SortKey = 'name' | 'rating' | 'status' | 'address';
@@ -96,7 +97,53 @@ const App: React.FC = () => {
   });
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [runTutorial, setRunTutorial] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   
+  useEffect(() => {
+    const savedProfile = localStorage.getItem('mapleads_user_profile');
+    const today = new Date().toISOString().split('T')[0];
+
+    if (savedProfile) {
+      try {
+        const profile: UserProfile = JSON.parse(savedProfile);
+        if (profile.lastResetDate !== today) {
+          profile.generatedToday = 0;
+          profile.lastResetDate = today;
+          localStorage.setItem('mapleads_user_profile', JSON.stringify(profile));
+        }
+        setUserProfile(profile);
+      } catch (e) {
+        console.error("Failed to parse profile", e);
+      }
+    }
+  }, []);
+
+  const handleSaveProfile = (name: string, email: string) => {
+    const today = new Date().toISOString().split('T')[0];
+    const newProfile: UserProfile = {
+      name,
+      email,
+      dailyLimit: 100,
+      generatedToday: 0,
+      lastResetDate: today
+    };
+    setUserProfile(newProfile);
+    localStorage.setItem('mapleads_user_profile', JSON.stringify(newProfile));
+    addToast("Profile saved successfully!", 'success');
+  };
+
+  const incrementScrapeCount = (count: number) => {
+    if (!userProfile) return;
+    
+    const updatedProfile = {
+      ...userProfile,
+      generatedToday: userProfile.generatedToday + count
+    };
+    setUserProfile(updatedProfile);
+    localStorage.setItem('mapleads_user_profile', JSON.stringify(updatedProfile));
+  };
+
   const tutorialSteps: Step[] = useMemo(() => [
     {
       target: 'body',
@@ -346,6 +393,17 @@ const App: React.FC = () => {
   };
 
   const performScrape = async (isLoadMore: boolean = false) => {
+    if (!userProfile) {
+      setShowProfileModal(true);
+      addToast("Please complete your profile to start searching.", 'info');
+      return;
+    }
+
+    if (userProfile.generatedToday >= userProfile.dailyLimit) {
+      addToast("Daily limit reached (100 leads). Resets at 00:00 UTC.", 'error');
+      return;
+    }
+
     if (!hasApiKey()) {
       addToast("API Key missing. Please configure environment.", 'error');
       return;
@@ -375,6 +433,12 @@ const App: React.FC = () => {
       const iterations = (scrapeMode === 'extreme' && !isLoadMore) ? 3 : 1;
       
       for (let i = 0; i < iterations; i++) {
+        // Double check limit inside loop for extreme mode
+        if (userProfile.generatedToday + gatheredLeads.length >= userProfile.dailyLimit) {
+          addToast("Daily limit reached during search.", 'warning');
+          break;
+        }
+
         if (iterations > 1 && i > 0) {
           addToast(`Batch ${i + 1}/${iterations}: Digging deeper...`, 'info');
         }
@@ -392,13 +456,22 @@ const App: React.FC = () => {
           break;
         }
 
-        gatheredLeads = [...gatheredLeads, ...newBatch];
-        currentKnownNames = [...currentKnownNames, ...newBatch.map(l => l.name)];
+        // Respect the limit strictly
+        const remaining = userProfile.dailyLimit - (userProfile.generatedToday + gatheredLeads.length);
+        const limitedBatch = newBatch.slice(0, remaining);
+
+        gatheredLeads = [...gatheredLeads, ...limitedBatch];
+        currentKnownNames = [...currentKnownNames, ...limitedBatch.map(l => l.name)];
 
         if (!isLoadMore) {
-           setLeads(prev => i === 0 ? newBatch : [...prev, ...newBatch]);
+           setLeads(prev => i === 0 ? limitedBatch : [...prev, ...limitedBatch]);
         } else {
-           setLeads(prev => [...prev, ...newBatch]);
+           setLeads(prev => [...prev, ...limitedBatch]);
+        }
+
+        if (limitedBatch.length < newBatch.length) {
+          addToast("Daily limit reached. Some results were omitted.", 'warning');
+          break;
         }
 
         if (i < iterations - 1) await new Promise(r => setTimeout(r, 1500));
@@ -408,6 +481,7 @@ const App: React.FC = () => {
       setScrapeProgress(100);
 
       if (gatheredLeads.length > 0) {
+        incrementScrapeCount(gatheredLeads.length);
         if (!isLoadMore) {
            addToHistory(scrapeCategory, scrapeLocation, gatheredLeads);
            await new Promise(r => setTimeout(r, 600));
@@ -644,6 +718,27 @@ const App: React.FC = () => {
 
     return (
       <div className="space-y-6 animate-fade-in pb-20 md:pb-0">
+        {/* Mobile Daily Limit Card */}
+        <div className="md:hidden bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-5 text-white shadow-xl shadow-gray-900/10 relative overflow-hidden">
+           <div className="absolute top-0 right-0 w-20 h-20 bg-white opacity-5 rounded-full -mr-10 -mt-10 blur-xl"></div>
+           <div className="flex justify-between items-center mb-3 relative z-10">
+             <div className="flex items-center gap-2">
+               <Zap size={18} className="text-blue-400 fill-blue-400" />
+               <span className="text-sm font-bold">Daily Generation Limit</span>
+             </div>
+             <span className="text-xs font-medium bg-white/10 px-2 py-1 rounded-lg border border-white/10">
+               {userProfile?.generatedToday || 0} / {userProfile?.dailyLimit || 100}
+             </span>
+           </div>
+           <div className="w-full bg-gray-700 rounded-full h-2 mb-1 overflow-hidden relative z-10">
+              <div 
+                className="bg-blue-400 h-full rounded-full shadow-[0_0_10px_rgba(96,165,250,0.5)] transition-all duration-500"
+                style={{ width: `${Math.min(100, ((userProfile?.generatedToday || 0) / (userProfile?.dailyLimit || 100)) * 100)}%` }}
+              ></div>
+           </div>
+           <p className="text-[10px] text-gray-400 font-medium relative z-10">Resets at 00:00 UTC</p>
+        </div>
+
         <div id="dashboard-stats" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatsCard title="Total Leads" value={totalLeads} icon={Users} color="blue" />
           <StatsCard title="Contacted" value={contacted} icon={MessageCircle} color="orange" />
@@ -821,6 +916,27 @@ const App: React.FC = () => {
 
   const renderScraper = () => (
     <div className="max-w-3xl mx-auto space-y-8 animate-fade-in pb-20 md:pb-0">
+      {/* Mobile Daily Limit Card */}
+      <div className="md:hidden bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-5 text-white shadow-xl shadow-gray-900/10 relative overflow-hidden">
+         <div className="absolute top-0 right-0 w-20 h-20 bg-white opacity-5 rounded-full -mr-10 -mt-10 blur-xl"></div>
+         <div className="flex justify-between items-center mb-3 relative z-10">
+           <div className="flex items-center gap-2">
+             <Zap size={18} className="text-blue-400 fill-blue-400" />
+             <span className="text-sm font-bold">Daily Generation Limit</span>
+           </div>
+           <span className="text-xs font-medium bg-white/10 px-2 py-1 rounded-lg border border-white/10">
+             {userProfile?.generatedToday || 0} / {userProfile?.dailyLimit || 100}
+           </span>
+         </div>
+         <div className="w-full bg-gray-700 rounded-full h-2 mb-1 overflow-hidden relative z-10">
+            <div 
+              className="bg-blue-400 h-full rounded-full shadow-[0_0_10px_rgba(96,165,250,0.5)] transition-all duration-500"
+              style={{ width: `${Math.min(100, ((userProfile?.generatedToday || 0) / (userProfile?.dailyLimit || 100)) * 100)}%` }}
+            ></div>
+         </div>
+         <p className="text-[10px] text-gray-400 font-medium relative z-10">Resets at 00:00 UTC</p>
+      </div>
+
       <div className="text-center space-y-4 mb-12 pt-8">
         <h2 className="text-4xl md:text-5xl font-bold text-textMain tracking-tight">Find Your Next Customer</h2>
         <p className="text-lg text-textSec max-w-lg mx-auto">AI-powered lead generation from Google Maps. Enter a niche and location to get started.</p>
@@ -1621,11 +1737,16 @@ const App: React.FC = () => {
           <div className="p-6 border-t border-gray-50">
              <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-5 text-center text-white shadow-xl shadow-gray-900/10 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-20 h-20 bg-white opacity-5 rounded-full -mr-10 -mt-10 blur-xl"></div>
-                <p className="text-xs font-bold text-blue-200 mb-3 uppercase tracking-wider">Pro Plan Active</p>
+                <p className="text-xs font-bold text-blue-200 mb-3 uppercase tracking-wider">Daily Limit</p>
                 <div className="w-full bg-gray-700 rounded-full h-1.5 mb-3 overflow-hidden">
-                   <div className="bg-blue-400 h-full w-3/4 rounded-full shadow-[0_0_10px_rgba(96,165,250,0.5)]"></div>
+                   <div 
+                     className="bg-blue-400 h-full rounded-full shadow-[0_0_10px_rgba(96,165,250,0.5)] transition-all duration-500"
+                     style={{ width: `${Math.min(100, ((userProfile?.generatedToday || 0) / (userProfile?.dailyLimit || 100)) * 100)}%` }}
+                   ></div>
                 </div>
-                <p className="text-[10px] text-gray-400 font-medium">750 / 1000 Credits Used</p>
+                <p className="text-[10px] text-gray-400 font-medium">
+                  {userProfile?.generatedToday || 0} / {userProfile?.dailyLimit || 100} Leads Generated
+                </p>
              </div>
           </div>
         </div>
@@ -1658,13 +1779,16 @@ const App: React.FC = () => {
                  <Bell size={20} className="md:w-[22px] md:h-[22px]" />
                  <span className="absolute top-2 right-2 w-2 h-2 md:w-2.5 md:h-2.5 bg-red-500 rounded-full ring-2 ring-white animate-pulse"></span>
               </button>
-              <div className="flex items-center gap-3 pl-4 md:pl-6 border-l border-gray-100">
+              <div 
+                className="flex items-center gap-3 pl-4 md:pl-6 border-l border-gray-100 cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => setShowProfileModal(true)}
+              >
                 <div className="text-right hidden md:block">
-                  <div className="text-sm font-bold text-gray-900">John Doe</div>
-                  <div className="text-xs text-gray-500">Premium User</div>
+                  <div className="text-sm font-bold text-gray-900">{userProfile?.name || 'Complete Profile'}</div>
+                  <div className="text-xs text-gray-500">{userProfile?.email || 'Click to set details'}</div>
                 </div>
-                <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xs md:text-sm shadow-lg shadow-blue-500/20 ring-2 ring-white">
-                  JD
+                <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xs md:text-sm shadow-lg shadow-blue-500/20 ring-2 ring-white uppercase">
+                  {userProfile?.name ? userProfile.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'}
                 </div>
               </div>
            </div>
@@ -1707,6 +1831,13 @@ const App: React.FC = () => {
         
         {/* Modals */}
         {showOnboarding && <OnboardingModal onClose={() => setShowOnboarding(false)} />}
+        <ProfileModal 
+          isOpen={showProfileModal} 
+          onClose={() => setShowProfileModal(false)} 
+          onSave={handleSaveProfile}
+          initialName={userProfile?.name}
+          initialEmail={userProfile?.email}
+        />
         <ConfirmationModal 
           isOpen={confirmModal.isOpen}
           title={confirmModal.title}

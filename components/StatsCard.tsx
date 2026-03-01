@@ -7,7 +7,7 @@ interface StatsCardProps {
   icon: LucideIcon;
   trend?: string;
   trendUp?: boolean;
-  color?: 'blue' | 'green' | 'orange' | 'purple' | 'red';
+  color?: 'blue' | 'green' | 'orange' | 'purple' | 'red' | 'yellow';
 }
 
 export const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon: Icon, trend, trendUp, color = 'blue' }) => {
@@ -18,6 +18,7 @@ export const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon: Icon, 
     orange: { bg: 'bg-orange-50', text: 'text-orange-600', ring: 'ring-orange-100' },
     purple: { bg: 'bg-violet-50', text: 'text-violet-600', ring: 'ring-violet-100' },
     red: { bg: 'bg-red-50', text: 'text-red-600', ring: 'ring-red-100' },
+    yellow: { bg: 'bg-yellow-50', text: 'text-yellow-600', ring: 'ring-yellow-100' },
   };
 
   const style = colorStyles[color] || colorStyles.blue;

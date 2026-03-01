@@ -43,4 +43,12 @@ export interface SearchHistoryItem {
   leads?: Lead[];
 }
 
-export type ViewState = 'dashboard' | 'scraper' | 'leads' | 'campaigns' | 'whatsapp';
+export interface UserProfile {
+  name: string;
+  email: string;
+  dailyLimit: number;
+  generatedToday: number;
+  lastResetDate: string; // ISO date string (YYYY-MM-DD)
+}
+
+export type ViewState = 'dashboard' | 'scraper' | 'leads' | 'campaigns' | 'whatsapp' | 'profile';
