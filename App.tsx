@@ -6,6 +6,7 @@ import {
   Mail, 
   MessageCircle, 
   Settings, 
+  Bell,
   X,
   Plus,
   Heart,
@@ -1651,9 +1652,13 @@ const App: React.FC = () => {
            </div>
            
            <div className="flex items-center gap-4 md:gap-6">
-              <button className="p-2 md:p-2.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 rounded-full relative transition-colors">
-                 <Mail size={20} className="md:w-[22px] md:h-[22px]" />
-                 <span className="absolute top-2 right-2 w-2 h-2 md:w-2.5 md:h-2.5 bg-red-500 rounded-full ring-2 ring-white"></span>
+              <button 
+                 onClick={() => addToast("You have no new notifications", 'info')}
+                 className="p-2 md:p-2.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 rounded-full relative transition-colors group"
+                 title="Notifications"
+               >
+                 <Bell size={20} className="md:w-[22px] md:h-[22px]" />
+                 <span className="absolute top-2 right-2 w-2 h-2 md:w-2.5 md:h-2.5 bg-red-500 rounded-full ring-2 ring-white animate-pulse"></span>
               </button>
               <div className="flex items-center gap-3 pl-4 md:pl-6 border-l border-gray-100">
                 <div className="text-right hidden md:block">
