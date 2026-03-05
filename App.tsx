@@ -98,6 +98,21 @@ const App: React.FC = () => {
     onConfirm: () => {},
     isDanger: false
   });
+
+  // --- EFFECTS ---
+
+  // Update Document Title based on View
+  useEffect(() => {
+    const titles: Record<ViewState, string> = {
+      dashboard: 'Dashboard | MapLeads - B2B Lead Gen',
+      scraper: 'Google Maps Scraper | MapLeads',
+      leads: 'Lead Management | MapLeads',
+      campaigns: 'AI Campaigns | MapLeads',
+      whatsapp: 'WhatsApp Tools | MapLeads',
+      profile: 'User Profile | MapLeads'
+    };
+    document.title = titles[view] || 'MapLeads | Free Google Maps Lead Extractor';
+  }, [view]);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [runTutorial, setRunTutorial] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -905,7 +920,7 @@ const App: React.FC = () => {
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-8 text-white shadow-lg relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
           <div className="relative z-10">
-            <h1 className="text-3xl font-bold mb-4">Ready to Grow Your Business?</h1>
+            <h2 className="text-3xl font-bold mb-4">Ready to Grow Your Business?</h2>
             <p className="text-blue-100 mb-6 max-w-xl text-lg">
               Start extracting high-quality B2B leads from Google Maps, Facebook, and Instagram instantly. 
               Automate your outreach and close more deals today.
@@ -1690,7 +1705,6 @@ const App: React.FC = () => {
       </div>
 
       <div className="text-center space-y-4 mb-12 pt-8">
-        <h1 className="sr-only">MapLeads - The Best Google Maps, Facebook & Instagram Lead Extractor & WhatsApp Marketing Tool</h1>
         <h2 className="text-4xl md:text-5xl font-bold text-textMain tracking-tight">
           Find Your Next B2B Leads with <span className="text-googleBlue">{scrapeSource} Scraper</span>
         </h2>
@@ -2157,7 +2171,7 @@ const App: React.FC = () => {
 
       {/* Floating Action Buttons */}
       {leads.length > 0 && !isBulkSending && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-30 flex items-center gap-4 animate-slide-up">
+        <div className="fixed bottom-24 md:bottom-8 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-4 animate-slide-up">
            <button
              onClick={() => performScrape(true)}
              disabled={isScraping || isScrapingMore}
