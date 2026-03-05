@@ -357,6 +357,17 @@ const App: React.FC = () => {
     document.title = titles[view] || 'MapLeads | Free Lead Generation Tool';
   }, [view]);
 
+  // Google Analytics Tracking (using the script in index.html)
+  useEffect(() => {
+    if (typeof window.gtag === 'function') {
+      window.gtag('event', 'page_view', {
+        page_title: document.title,
+        page_location: window.location.href,
+        page_path: view
+      });
+    }
+  }, [view]);
+
   // --- HELPERS ---
 
   const handleShareApp = async () => {

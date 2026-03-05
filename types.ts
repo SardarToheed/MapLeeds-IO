@@ -1,3 +1,10 @@
+declare global {
+  interface Window {
+    gtag: (...args: any[]) => void;
+    dataLayer: any[];
+  }
+}
+
 export interface Lead {
   id: string;
   name: string;
