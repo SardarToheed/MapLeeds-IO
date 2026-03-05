@@ -256,6 +256,7 @@ const App: React.FC = () => {
   const [scrapeLocation, setScrapeLocation] = useState('');
   const [scrapeLocationHints, setScrapeLocationHints] = useState('');
   const [scrapeMode, setScrapeMode] = useState<'fast' | 'deep' | 'extreme'>('fast');
+  const [scrapeSource, setScrapeSource] = useState<'Google Maps' | 'Facebook' | 'Instagram'>('Google Maps');
   const [isScraping, setIsScraping] = useState(false);
   const [isScrapingMore, setIsScrapingMore] = useState(false);
   const [scrapeProgress, setScrapeProgress] = useState(0);
@@ -273,6 +274,7 @@ const App: React.FC = () => {
   const [generatedContent, setGeneratedContent] = useState({ subject: '', body: '' });
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
   const [activeCampaignId, setActiveCampaignId] = useState<string | null>(null);
+  const [readingArticle, setReadingArticle] = useState<{title: string, content: React.ReactNode} | null>(null);
 
   // WhatsApp Tools State
   const [waDirectPhone, setWaDirectPhone] = useState('');
@@ -343,8 +345,40 @@ const App: React.FC = () => {
     localStorage.setItem('mapleads_template', messageTemplate);
   }, [messageTemplate]);
 
+  // Dynamic Title for SEO
+  useEffect(() => {
+    const titles: Record<string, string> = {
+      dashboard: 'Dashboard | MapLeads - Free B2B Lead Gen',
+      scraper: 'Google Maps Scraper | Find Business Leads Free',
+      leads: 'My Leads | Manage & Export B2B Data',
+      campaigns: 'AI Campaigns | Cold Email & WhatsApp Marketing',
+      whatsapp: 'WhatsApp Tools | Bulk Sender & Link Generator'
+    };
+    document.title = titles[view] || 'MapLeads | Free Lead Generation Tool';
+  }, [view]);
 
   // --- HELPERS ---
+
+  const handleShareApp = async () => {
+    const shareData = {
+      title: 'MapLeads - Free B2B Lead Extractor',
+      text: 'Check out MapLeads! It extracts unlimited leads from Google Maps and automates WhatsApp marketing for free.',
+      url: 'https://mapleads.online/'
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        addToast("Thanks for sharing!", 'success');
+      } catch (err) {
+        // User cancelled or error
+      }
+    } else {
+      copyImageToClipboard('https://mapleads.online/'); // Fallback to copying URL
+      navigator.clipboard.writeText(shareData.url);
+      addToast("Link copied to clipboard!", 'success');
+    }
+  };
 
   const addToast = (message: string, type: ToastType) => {
     const id = Date.now().toString();
@@ -449,8 +483,16 @@ const App: React.FC = () => {
       addToast("API Key missing. Please configure environment.", 'error');
       return;
     }
-    if (!scrapeCategory || !scrapeLocation) {
-      addToast("Please enter both category and location.", 'warning');
+    
+    const isFacebookGroupUrl = scrapeSource === 'Facebook' && (scrapeCategory.includes('facebook.com/groups/') || scrapeCategory.includes('fb.com/groups/'));
+    
+    if (!scrapeCategory) {
+      addToast("Please enter a category or group link.", 'warning');
+      return;
+    }
+    
+    if (!isFacebookGroupUrl && !scrapeLocation) {
+      addToast("Please enter a target location.", 'warning');
       return;
     }
 
@@ -493,7 +535,8 @@ const App: React.FC = () => {
           scrapeLocation, 
           scrapeMode, 
           scrapeLocationHints, 
-          currentKnownNames
+          currentKnownNames,
+          scrapeSource
         );
 
         if (newBatch.length === 0) {
@@ -543,8 +586,28 @@ const App: React.FC = () => {
       console.error(error);
       clearInterval(progressInterval);
       setScrapeProgress(0);
-      setScrapeError("Failed to fetch leads. AI service might be busy.");
-      addToast("Scraping failed. Please try again.", 'error');
+      
+      let errorMessage = "Failed to fetch leads. Please try again.";
+      let toastMessage = "Scraping failed. Please try again.";
+
+      if (error.message) {
+        if (error.message.includes("API key not valid")) {
+          errorMessage = "Invalid API Key. Please check your configuration.";
+          toastMessage = "Invalid API Key.";
+        } else if (error.message.includes("429") || error.message.includes("Quota exceeded")) {
+          errorMessage = "Daily AI quota exceeded. Please try again tomorrow.";
+          toastMessage = "AI Quota Exceeded.";
+        } else if (error.message.includes("NetworkError") || error.message.includes("fetch")) {
+          errorMessage = "Network error. Please check your internet connection.";
+          toastMessage = "Network Error.";
+        } else if (error.message.includes("safety")) {
+           errorMessage = "Search query flagged by safety filters. Try different keywords.";
+           toastMessage = "Safety Filter Triggered.";
+        }
+      }
+
+      setScrapeError(errorMessage);
+      addToast(toastMessage, 'error');
     } finally {
       setIsScraping(false);
       setIsScrapingMore(false);
@@ -750,6 +813,60 @@ const App: React.FC = () => {
 
   // --- RENDERERS ---
 
+  const openArticle = (id: string) => {
+    const articles: Record<string, {title: string, content: React.ReactNode}> = {
+      'local-seo': {
+        title: 'How to Use a Google Maps Scraper for Local SEO',
+        content: (
+          <div className="space-y-4">
+            <p>Local SEO is all about visibility. When you use a Google Maps Scraper, you're not just finding leads; you're analyzing the market.</p>
+            <h3 className="text-xl font-bold text-gray-900 mt-4">1. Identify Competitors</h3>
+            <p>By scraping businesses in your niche, you can see who is ranking and why. Look at their review counts, ratings, and categories.</p>
+            <h3 className="text-xl font-bold text-gray-900 mt-4">2. Find Partnership Opportunities</h3>
+            <p>Don't just look for customers. Look for partners. A web design agency can partner with an SEO agency found on Maps.</p>
+            <h3 className="text-xl font-bold text-gray-900 mt-4">3. Build a Targeted List</h3>
+            <p>Quality over quantity. Use the scraper to filter by rating. Businesses with 3.5 to 4.5 stars often know they need help but aren't a lost cause.</p>
+          </div>
+        )
+      },
+      'whatsapp-marketing': {
+        title: 'Mastering WhatsApp Marketing for Small Businesses',
+        content: (
+          <div className="space-y-4">
+            <p>WhatsApp has a 98% open rate. It's the most powerful channel for B2B outreach if used correctly.</p>
+            <h3 className="text-xl font-bold text-gray-900 mt-4">The Golden Rule: Permission</h3>
+            <p>Always ensure you have a reason to contact. "I saw your business on Google Maps and noticed..." is a great opener.</p>
+            <h3 className="text-xl font-bold text-gray-900 mt-4">Personalization is Key</h3>
+            <p>Use our AI writer to craft messages that mention the business name and specific details. Generic spam gets blocked.</p>
+          </div>
+        )
+      },
+      'ai-prospecting': {
+        title: 'The Power of AI in Sales Prospecting',
+        content: (
+          <div className="space-y-4">
+            <p>AI isn't replacing sales people; it's giving them superpowers. Gemini 3.1 Pro can analyze a business category and suggest the perfect pitch.</p>
+            <ul className="list-disc pl-5 space-y-2">
+              <li><strong>Tone Matching:</strong> AI can adjust your email tone from professional to casual based on the industry.</li>
+              <li><strong>Pain Point Prediction:</strong> AI knows that a "Dentist" cares about "Patient Retention" while a "Plumber" cares about "Emergency Calls".</li>
+            </ul>
+          </div>
+        )
+      },
+      'real-estate': {
+        title: 'Real Estate Lead Generation Strategies for 2026',
+        content: (
+          <div className="space-y-4">
+            <p>The real estate market is shifting. Commercial real estate agents need to find business owners directly.</p>
+            <p>Use MapLeads to find "Law Firms", "Tech Startups", or "Medical Clinics" that might be looking for new office space.</p>
+            <p>Directly contacting the business owner via the extracted phone number bypasses the gatekeepers.</p>
+          </div>
+        )
+      }
+    };
+    setReadingArticle(articles[id] || null);
+  };
+
   const renderDashboard = () => {
     const totalLeads = leads.length;
     const contacted = leads.filter(l => l.status === 'Contacted').length;
@@ -764,6 +881,25 @@ const App: React.FC = () => {
 
     return (
       <div className="space-y-6 animate-fade-in pb-20 md:pb-0">
+        {/* Hero Section */}
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-8 text-white shadow-lg relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
+          <div className="relative z-10">
+            <h1 className="text-3xl font-bold mb-4">Ready to Grow Your Business?</h1>
+            <p className="text-blue-100 mb-6 max-w-xl text-lg">
+              Start extracting high-quality B2B leads from Google Maps, Facebook, and Instagram instantly. 
+              Automate your outreach and close more deals today.
+            </p>
+            <button 
+              onClick={() => setView('scraper')}
+              className="bg-white text-blue-600 hover:bg-blue-50 font-bold py-3 px-8 rounded-xl shadow-md transition-all transform hover:scale-105 flex items-center gap-2"
+            >
+              <Search size={20} />
+              Start Generating Leads
+            </button>
+          </div>
+        </div>
+
         {/* Mobile Daily Limit Card */}
         <div className="md:hidden bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-5 text-white shadow-xl shadow-gray-900/10 relative overflow-hidden">
            <div className="absolute top-0 right-0 w-20 h-20 bg-white opacity-5 rounded-full -mr-10 -mt-10 blur-xl"></div>
@@ -1408,7 +1544,7 @@ const App: React.FC = () => {
               <p className="text-sm text-textSec leading-relaxed mb-6">
                 Learn how to leverage a <strong>Google Maps Lead Extractor</strong> to identify local competitors and potential partners. Discover the secrets of <strong>local lead generation</strong> and how to build a high-quality <strong>B2B lead list</strong> without spending thousands on data providers.
               </p>
-              <button className="text-googleBlue font-semibold flex items-center gap-2 hover:underline">
+              <button onClick={() => openArticle('local-seo')} className="text-googleBlue font-semibold flex items-center gap-2 hover:underline">
                 Read Full Guide <ArrowRight size={16} />
               </button>
             </article>
@@ -1417,7 +1553,7 @@ const App: React.FC = () => {
               <p className="text-sm text-textSec leading-relaxed mb-6">
                 WhatsApp is the future of <strong>B2B outreach</strong>. This guide covers everything from using a <strong>bulk WhatsApp sender</strong> responsibly to creating high-converting <strong>WhatsApp marketing</strong> campaigns using <strong>AI campaign writers</strong>.
               </p>
-              <button className="text-googleBlue font-semibold flex items-center gap-2 hover:underline">
+              <button onClick={() => openArticle('whatsapp-marketing')} className="text-googleBlue font-semibold flex items-center gap-2 hover:underline">
                 Read Full Guide <ArrowRight size={16} />
               </button>
             </article>
@@ -1426,7 +1562,7 @@ const App: React.FC = () => {
               <p className="text-sm text-textSec leading-relaxed mb-6">
                 Discover how <strong>Gemini AI</strong> is revolutionizing the way businesses find and contact leads. Learn how to use an <strong>AI email writer</strong> to craft personalized messages that bypass spam filters and get real responses.
               </p>
-              <button className="text-googleBlue font-semibold flex items-center gap-2 hover:underline">
+              <button onClick={() => openArticle('ai-prospecting')} className="text-googleBlue font-semibold flex items-center gap-2 hover:underline">
                 Read Full Guide <ArrowRight size={16} />
               </button>
             </article>
@@ -1435,7 +1571,7 @@ const App: React.FC = () => {
               <p className="text-sm text-textSec leading-relaxed mb-6">
                 A deep dive into how real estate professionals are using <strong>Google Maps data scrapers</strong> to find property owners and commercial opportunities. Stay ahead of the curve with automated <strong>lead generation software</strong>.
               </p>
-              <button className="text-googleBlue font-semibold flex items-center gap-2 hover:underline">
+              <button onClick={() => openArticle('real-estate')} className="text-googleBlue font-semibold flex items-center gap-2 hover:underline">
                 Read Full Guide <ArrowRight size={16} />
               </button>
             </article>
@@ -1534,12 +1670,12 @@ const App: React.FC = () => {
       </div>
 
       <div className="text-center space-y-4 mb-12 pt-8">
-        <h1 className="sr-only">MapLeads - The Best Google Maps Lead Extractor & WhatsApp Marketing Tool</h1>
+        <h1 className="sr-only">MapLeads - The Best Google Maps, Facebook & Instagram Lead Extractor & WhatsApp Marketing Tool</h1>
         <h2 className="text-4xl md:text-5xl font-bold text-textMain tracking-tight">
-          Find Your Next B2B Leads with <span className="text-googleBlue">Google Maps Scraper</span>
+          Find Your Next B2B Leads with <span className="text-googleBlue">{scrapeSource} Scraper</span>
         </h2>
         <p className="text-lg text-textSec max-w-lg mx-auto">
-          Our AI-powered <strong>Google Maps Lead Extractor</strong> helps you find local businesses and automate your <strong>WhatsApp Marketing</strong> in seconds.
+          Our AI-powered <strong>{scrapeSource} Lead Extractor</strong> helps you find local businesses and automate your <strong>WhatsApp Marketing</strong> in seconds.
         </p>
       </div>
 
@@ -1561,8 +1697,10 @@ const App: React.FC = () => {
                   </h3>
                   <p className="text-textSec">
                     {isScrapingMore 
-                      ? `Searching for even more ${scrapeCategory} in ${scrapeLocation}`
-                      : `Scanning Google Maps for ${scrapeCategory} in ${scrapeLocation}`
+                      ? `Searching for even more ${scrapeCategory} on ${scrapeSource}`
+                      : (scrapeSource === 'Facebook' && (scrapeCategory.includes('facebook.com/groups/') || scrapeCategory.includes('fb.com/groups/')))
+                        ? `Extracting members from Facebook Group`
+                        : `Scanning ${scrapeSource} for ${scrapeCategory} in ${scrapeLocation}`
                     }
                   </p>
                 </div>
@@ -1587,15 +1725,40 @@ const App: React.FC = () => {
         <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-64 h-64 bg-gradient-to-tr from-green-50 to-teal-50 rounded-full blur-3xl opacity-60 pointer-events-none"></div>
 
         <div className="space-y-6 relative z-10">
+          {/* Source Selector */}
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-textMain ml-1">Data Source</label>
+            <div className="flex flex-wrap gap-3">
+              {['Google Maps', 'Facebook', 'Instagram'].map((src) => (
+                <button
+                  key={src}
+                  onClick={() => setScrapeSource(src as any)}
+                  className={`px-5 py-2.5 rounded-xl font-medium text-sm transition-all flex items-center gap-2 ${
+                    scrapeSource === src 
+                      ? 'bg-googleBlue text-white shadow-md shadow-blue-500/20' 
+                      : 'bg-gray-50 text-textSec hover:bg-gray-100 border border-gray-200'
+                  }`}
+                >
+                  {src === 'Google Maps' && <MapPin size={16} />}
+                  {src === 'Facebook' && <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>}
+                  {src === 'Instagram' && <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>}
+                  {src}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="block text-sm font-semibold text-textMain ml-1">Niche / Business Category</label>
+              <label className="block text-sm font-semibold text-textMain ml-1">
+                {scrapeSource === 'Facebook' ? 'Niche / Category OR Group Link' : 'Niche / Business Category'}
+              </label>
               <div className="relative group">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-googleBlue transition-colors" size={20} />
                 <input
                   type="text"
                   className="w-full pl-12 pr-4 py-4 bg-gray-50/50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-googleBlue focus:bg-white transition-all outline-none font-medium text-textMain placeholder-gray-400"
-                  placeholder="e.g. Restaurants, Real Estate, Dentists..."
+                  placeholder={scrapeSource === 'Facebook' ? "e.g. Restaurants OR https://facebook.com/groups/..." : "e.g. Restaurants, Real Estate, Dentists..."}
                   aria-label="Business Category for Lead Extraction"
                   value={scrapeCategory}
                   onChange={(e) => {
@@ -1634,7 +1797,9 @@ const App: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-semibold text-textMain ml-1">Target Location</label>
+              <label className="block text-sm font-semibold text-textMain ml-1">
+                {scrapeSource === 'Facebook' && (scrapeCategory.includes('facebook.com/groups/') || scrapeCategory.includes('fb.com/groups/')) ? 'Target Location (Optional)' : 'Target Location'}
+              </label>
               <div className="relative flex gap-2 group">
                 <div className="relative flex-1">
                   <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-googleRed transition-colors" size={20} />
@@ -2481,6 +2646,13 @@ const App: React.FC = () => {
            
            <div className="flex items-center gap-4 md:gap-6">
               <button 
+                 onClick={handleShareApp}
+                 className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-googleBlue rounded-full text-xs font-bold hover:bg-blue-100 transition-colors"
+                 title="Share MapLeads"
+               >
+                 <Share2 size={14} /> Share App
+              </button>
+              <button 
                  onClick={() => addToast("You have no new notifications", 'info')}
                  className="p-2 md:p-2.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 rounded-full relative transition-colors group"
                  title="Notifications"
@@ -2547,6 +2719,24 @@ const App: React.FC = () => {
           initialName={userProfile?.name}
           initialEmail={userProfile?.email}
         />
+        {readingArticle && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+            <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl relative">
+              <button 
+                onClick={() => setReadingArticle(null)}
+                className="absolute top-4 right-4 p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors z-10"
+              >
+                <X size={20} />
+              </button>
+              <div className="p-8 md:p-12">
+                <h2 className="text-3xl font-bold text-gray-900 mb-6">{readingArticle.title}</h2>
+                <div className="prose prose-blue max-w-none text-gray-600 leading-relaxed">
+                  {readingArticle.content}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         <ConfirmationModal 
           isOpen={confirmModal.isOpen}
           title={confirmModal.title}

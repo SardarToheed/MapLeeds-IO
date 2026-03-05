@@ -23,69 +23,134 @@ export const searchBusinesses = async (
   location: string,
   mode: 'fast' | 'deep' | 'extreme' = 'fast',
   locationHints: string = '',
-  excludeNames: string[] = []
+  excludeNames: string[] = [],
+  source: 'Google Maps' | 'Facebook' | 'Instagram' = 'Google Maps'
 ): Promise<Lead[]> => {
   const ai = getClient();
   
   let countInstruction = "";
-  let sourceLabel = "";
+  let sourceLabel = source;
 
   switch (mode) {
     case 'fast':
-      countInstruction = "Find up to 10 distinct businesses. Provide a quick overview.";
-      sourceLabel = "Fast Scrape";
+      countInstruction = "Find up to 10 distinct businesses or individuals. Provide a quick overview.";
       break;
     case 'deep':
-      countInstruction = "Perform a thorough search. Find up to 20 distinct businesses. Dig deeper than just the top results.";
-      sourceLabel = "Deep Scrape";
+      countInstruction = "Perform a thorough search. Find up to 20 distinct businesses or individuals. Dig deeper than just the top results.";
       break;
     case 'extreme':
-      countInstruction = "EXTREME MODE: We need maximum volume. Find at least 20-30 businesses in this specific batch. Look for hidden gems, new listings, and places with fewer reviews to expand the list.";
-      sourceLabel = "Extreme Scrape";
+      countInstruction = "EXTREME MODE: We need maximum volume. Find at least 20-30 businesses or individuals in this specific batch. Look for hidden gems, new listings, and places with fewer reviews to expand the list.";
       break;
   }
 
   // Optimize exclusion context to avoid token limits while maintaining effectiveness
-  // We use a Set to ensure uniqueness and slice the last 100 to keep prompt size manageable
   const uniqueExcludes = [...new Set(excludeNames)];
   const exclusionList = uniqueExcludes.slice(-100).map(n => `"${n}"`).join(", ");
   
   const exclusionContext = uniqueExcludes.length > 0 
-    ? `\nCRITICAL CONSTRAINT: You MUST IGNORE these previously found businesses: [${exclusionList}]. \nDo NOT return any of these. Find COMPLETELY DIFFERENT businesses.` 
+    ? `\nCRITICAL CONSTRAINT: You MUST IGNORE these previously found entities: [${exclusionList}]. \nDo NOT return any of these. Find COMPLETELY DIFFERENT entities.` 
     : "";
 
-  const prompt = `
-    Task: Search for businesses on Google Maps.
-    Search Query: "${category}"
-    Location: "${location}"
-    ${locationHints ? `Hints: "${locationHints}"` : ""}
+  let prompt = "";
+  let modelName = "gemini-2.5-flash";
+  let toolsConfig: any = [{ googleMaps: {} }];
+
+  if (source === 'Google Maps') {
+    prompt = `
+      Task: Search for businesses on Google Maps.
+      Search Query: "${category}"
+      Location: "${location}"
+      ${locationHints ? `Hints: "${locationHints}"` : ""}
+      
+      ${countInstruction}
+      ${exclusionContext}
+      
+      Instruction:
+      1. Use the Google Maps tool to find businesses matching the query in the specified location.
+      2. Focus on getting valid contact details where available.
+      3. If the exact location has limited results, slightly expand the radius but keep it relevant.
+      
+      Output Format:
+      Return a pure JSON array of objects.
+      Keys: "name", "address", "phone", "email", "website", "rating", "type".
+      
+      Rules:
+      - "phone" should be the public number.
+      - "email" should be a plausible contact email if found, or leave empty string.
+      - "rating" should be the number (e.g. 4.5).
+      - Do not wrap in markdown (no \`\`\`json). Just the raw JSON array.
+    `;
+  } else {
+    // Facebook or Instagram
+    modelName = "gemini-3-flash-preview";
+    toolsConfig = [{ googleSearch: {} }];
     
-    ${countInstruction}
-    ${exclusionContext}
+    const isFacebookGroupUrl = source === 'Facebook' && (category.includes('facebook.com/groups/') || category.includes('fb.com/groups/'));
     
-    Instruction:
-    1. Use the Google Maps tool to find businesses matching the query in the specified location.
-    2. Focus on getting valid contact details where available.
-    3. If the exact location has limited results, slightly expand the radius but keep it relevant.
-    
-    Output Format:
-    Return a pure JSON array of objects.
-    Keys: "name", "address", "phone", "email", "website", "rating", "type".
-    
-    Rules:
-    - "phone" should be the public number.
-    - "email" should be a plausible contact email if found, or leave empty string.
-    - "rating" should be the number (e.g. 4.5).
-    - Do not wrap in markdown (no \`\`\`json). Just the raw JSON array.
-  `;
+    if (isFacebookGroupUrl) {
+      prompt = `
+        Task: Extract member data or related businesses from the provided Facebook group link.
+        Group Link: "${category}"
+        ${location ? `Target Location: "${location}"` : ""}
+        
+        ${countInstruction}
+        ${exclusionContext}
+        
+        Instruction:
+        1. Use the Google Search tool to find information related to members, admins, or businesses associated with this Facebook group.
+        2. Focus on getting valid contact details (phone, email) if publicly available, or names and profile links.
+        3. Note: If direct member data is restricted, find associated businesses or public figures related to the group.
+        
+        Output Format:
+        Return a pure JSON array of objects.
+        Keys: "name", "address", "phone", "email", "website", "rating", "type".
+        
+        Rules:
+        - "name" should be the member or business name.
+        - "website" should be their profile URL.
+        - "phone" should be the public number if found.
+        - "email" should be a plausible contact email if found, or leave empty string.
+        - "rating" can be 0 if not applicable.
+        - "type" should be "Group Member" or related category.
+        - Do not wrap in markdown (no \`\`\`json). Just the raw JSON array.
+      `;
+    } else {
+      prompt = `
+        Task: Search for business profiles on ${source}.
+        Search Query: "${category} in ${location}"
+        ${locationHints ? `Hints: "${locationHints}"` : ""}
+        
+        ${countInstruction}
+        ${exclusionContext}
+        
+        Instruction:
+        1. Use the Google Search tool to find ${source} pages/profiles for businesses matching the query in the specified location.
+        2. Focus on getting valid contact details (phone, email) often listed in their bio or about section.
+        3. Look for actual local businesses, not just generic pages.
+        
+        Output Format:
+        Return a pure JSON array of objects.
+        Keys: "name", "address", "phone", "email", "website", "rating", "type".
+        
+        Rules:
+        - "name" should be the business name.
+        - "website" should be their ${source} profile URL.
+        - "phone" should be the public number if found.
+        - "email" should be a plausible contact email if found, or leave empty string.
+        - "rating" can be 0 if not applicable.
+        - "type" should be the business category.
+        - Do not wrap in markdown (no \`\`\`json). Just the raw JSON array.
+      `;
+    }
+  }
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash", 
+      model: modelName, 
       contents: prompt,
       config: {
-        tools: [{ googleMaps: {} }],
-        // We do not set responseMimeType to JSON here because we are using a tool (Maps).
+        tools: toolsConfig,
+        // We do not set responseMimeType to JSON here because we are using a tool.
       },
     });
 

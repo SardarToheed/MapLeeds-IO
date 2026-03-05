@@ -1,6 +1,6 @@
 {
-  "name": "MapLeads | Google Maps Lead Extractor",
-  "description": "MapLeads: The ultimate B2B lead generation suite. Features: 1. Google Maps Scraper for high-quality business data. 2. AI Campaign Writer for personalized outreach. 3. WhatsApp Marketing Tools for bulk messaging & QR generation.",
+  "name": "MapLeads | Free Google Maps, Facebook & Instagram Lead Extractor",
+  "description": "The #1 Free B2B Lead Generation Tool. Extract unlimited business leads from Google Maps, Facebook Groups, and Instagram. Features AI-powered email writing, bulk WhatsApp marketing, and direct contact extraction.",
   "requestFramePermissions": [
     "geolocation"
   ]
