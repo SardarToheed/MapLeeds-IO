@@ -52,7 +52,7 @@ export const searchBusinesses = async (
     : "";
 
   let prompt = "";
-  let modelName = "gemini-2.5-flash";
+  let modelName = "gemini-2.0-flash-exp";
   let toolsConfig: any = [{ googleMaps: {} }];
 
   if (source === 'Google Maps') {
@@ -228,7 +228,7 @@ export const lookupLocation = async (query: string): Promise<string> => {
   
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash-exp",
       contents: prompt,
       config: {
         tools: [{ googleMaps: {} }],
@@ -250,7 +250,7 @@ export const reverseGeocode = async (lat: number, lng: number): Promise<string> 
   
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash-exp",
       contents: prompt,
       config: {
         tools: [{ googleMaps: {} }],
@@ -325,7 +325,7 @@ export const generateEmailContent = async (
   `;
 
   const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash", 
+    model: "gemini-2.0-flash-exp", 
     contents: prompt,
     config: {
       responseMimeType: "application/json"
