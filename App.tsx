@@ -2016,6 +2016,14 @@ const App: React.FC = () => {
                            <MessageCircle size={12} className="text-waGreen"/> {lead.phone}
                          </div>
                        )}
+                       {lead.website && (
+                         <div className="flex items-center gap-1.5 text-xs text-textSec">
+                           <Link size={12} className="text-blue-500"/> 
+                           <a href={lead.website} target="_blank" rel="noopener noreferrer" className="hover:underline text-blue-600 truncate max-w-[150px] block">
+                             {lead.source === 'Facebook' ? 'Facebook Profile' : lead.source === 'Instagram' ? 'Instagram Profile' : 'Website'}
+                           </a>
+                         </div>
+                       )}
                     </div>
                   </td>
                   <td className="px-4 py-3 align-top">

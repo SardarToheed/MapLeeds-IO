@@ -107,7 +107,7 @@ export const searchBusinesses = async (
         
         Rules:
         - "name" should be the member or business name.
-        - "website" should be their profile URL.
+        - "website" MUST be their Facebook profile or page URL.
         - "phone" should be the public number if found.
         - "email" should be a plausible contact email if found, or leave empty string.
         - "rating" can be 0 if not applicable.
@@ -134,7 +134,7 @@ export const searchBusinesses = async (
         
         Rules:
         - "name" should be the business name.
-        - "website" should be their ${source} profile URL.
+        - "website" MUST be their ${source} profile URL (e.g. facebook.com/... or instagram.com/...).
         - "phone" should be the public number if found.
         - "email" should be a plausible contact email if found, or leave empty string.
         - "rating" can be 0 if not applicable.
