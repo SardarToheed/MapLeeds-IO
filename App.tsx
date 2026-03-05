@@ -2154,6 +2154,30 @@ const App: React.FC = () => {
             </button>
          </div>
       )}
+
+      {/* Floating Action Buttons */}
+      {leads.length > 0 && !isBulkSending && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-30 flex items-center gap-4 animate-slide-up">
+           <button
+             onClick={() => performScrape(true)}
+             disabled={isScraping || isScrapingMore}
+             className="flex items-center gap-2 px-6 py-3 bg-white text-googleBlue font-semibold rounded-full hover:bg-blue-50 transition-all border border-blue-100 shadow-lg shadow-blue-900/5 active:scale-95"
+           >
+             {isScrapingMore ? <Loader2 size={20} className="animate-spin"/> : <Plus size={20} />}
+             Load More
+           </button>
+           <button
+             onClick={() => {
+               setView('campaigns');
+               setIsCreatingCampaign(true);
+             }}
+             className="flex items-center gap-2 px-6 py-3 bg-googleBlue text-white font-semibold rounded-full hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/30 active:scale-95"
+           >
+             <Zap size={20} />
+             Start Campaign
+           </button>
+        </div>
+      )}
     </div>
   );
 
