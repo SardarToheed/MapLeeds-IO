@@ -285,6 +285,7 @@ const App: React.FC = () => {
   const [showTemplateEditor, setShowTemplateEditor] = useState(false);
   const [bulkQueue, setBulkQueue] = useState<Lead[]>([]);
   const [isBulkSending, setIsBulkSending] = useState(false);
+  const [bulkStats, setBulkStats] = useState({ sent: 0, skipped: 0, total: 0 });
   const [showQrCode, setShowQrCode] = useState(false);
   const qrContainerRef = useRef<HTMLDivElement>(null);
 
@@ -703,24 +704,32 @@ const App: React.FC = () => {
       return;
     }
     setBulkQueue(queue);
+    setBulkStats({ sent: 0, skipped: 0, total: queue.length });
     setIsBulkSending(true);
   };
   
-  const handleBulkSendNext = () => {
+  const handleBulkNext = (status: 'Contacted' | 'Skipped') => {
      if (bulkQueue.length === 0) {
        setIsBulkSending(false);
        addToast("Bulk sending completed!", 'success');
        return;
      }
      const [current, ...rest] = bulkQueue;
-     handleWhatsAppAction(current);
+     
+     if (status === 'Contacted') {
+       handleWhatsAppAction(current);
+       setBulkStats(prev => ({ ...prev, sent: prev.sent + 1 }));
+     } else {
+       handleStatusChange(current.id, 'Skipped');
+       setBulkStats(prev => ({ ...prev, skipped: prev.skipped + 1 }));
+     }
+
+     if (rest.length === 0) {
+       setIsBulkSending(false);
+       addToast(`Bulk session finished. Sent: ${bulkStats.sent + (status === 'Contacted' ? 1 : 0)}, Skipped: ${bulkStats.skipped + (status === 'Skipped' ? 1 : 0)}`, 'success');
+     }
+     
      setBulkQueue(rest);
-  };
-  
-  const handleBulkSkip = () => {
-    if (bulkQueue.length === 0) return;
-    const [_, ...rest] = bulkQueue;
-    setBulkQueue(rest);
   };
 
 
@@ -2099,9 +2108,21 @@ const App: React.FC = () => {
               <MessageCircle size={32} />
             </div>
             <h3 className="text-xl font-medium mb-2">Bulk Sending Mode</h3>
-            <p className="text-textSec mb-6 max-w-md">
+            <p className="text-textSec mb-4 max-w-md">
               Send messages one-by-one to avoid browser blocking.
             </p>
+
+            <div className="flex gap-3 mb-6 text-xs font-bold uppercase tracking-wider">
+               <div className="px-3 py-1.5 bg-green-50 text-green-700 rounded-full border border-green-100">
+                 Sent: {bulkStats.sent}
+               </div>
+               <div className="px-3 py-1.5 bg-gray-50 text-gray-600 rounded-full border border-gray-200">
+                 Skipped: {bulkStats.skipped}
+               </div>
+               <div className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full border border-blue-100">
+                 Remaining: {bulkQueue.length}
+               </div>
+            </div>
             
             <div className="bg-white border border-gray-200 shadow-lg rounded-xl p-6 w-full max-w-sm mb-6">
               <div className="text-xs text-textSec uppercase tracking-wide mb-1">Next Recipient</div>
@@ -2114,22 +2135,18 @@ const App: React.FC = () => {
 
               <div className="flex gap-2">
                  <button 
-                   onClick={handleBulkSendNext}
+                   onClick={() => handleBulkNext('Contacted')}
                    className="flex-1 py-3 bg-waGreen text-white rounded-lg font-medium hover:bg-green-600 transition-colors shadow-lg shadow-green-200"
                  >
                    Send Now
                  </button>
                  <button 
-                   onClick={handleBulkSkip}
+                   onClick={() => handleBulkNext('Skipped')}
                    className="px-4 py-3 text-textSec hover:bg-gray-100 rounded-lg font-medium transition-colors"
                  >
                    Skip
                  </button>
               </div>
-            </div>
-            
-            <div className="text-sm text-textSec mb-4">
-               {bulkQueue.length} leads remaining in queue
             </div>
             
             <button onClick={() => setIsBulkSending(false)} className="text-sm text-red-500 hover:underline">
