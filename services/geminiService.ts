@@ -22,7 +22,7 @@ export const searchBusinesses = async (
   category: string,
   location: string,
   mode: 'fast' | 'deep' | 'extreme' = 'fast',
-  locationHints: string = '',
+  scrapeFields: { name: boolean, phone: boolean, website: boolean, address: boolean, email: boolean, socialProfiles: boolean },
   excludeNames: string[] = [],
   source: 'Google Maps' | 'Facebook' | 'Instagram' = 'Google Maps'
 ): Promise<Lead[]> => {
@@ -31,15 +31,21 @@ export const searchBusinesses = async (
   let countInstruction = "";
   let sourceLabel = source;
 
+  // Construct field instruction
+  const fieldsToExtract = Object.entries(scrapeFields)
+    .filter(([_, selected]) => selected)
+    .map(([field, _]) => field)
+    .join(", ");
+
   switch (mode) {
     case 'fast':
-      countInstruction = "Find up to 10 distinct businesses or individuals. Provide a quick overview.";
+      countInstruction = `Find up to 10 distinct businesses or individuals. Extract ONLY these fields: ${fieldsToExtract}. Provide a quick overview.`;
       break;
     case 'deep':
-      countInstruction = "Perform a thorough search. Find up to 20 distinct businesses or individuals. Dig deeper than just the top results.";
+      countInstruction = `Perform a thorough search. Find up to 20 distinct businesses or individuals. Dig deeper than just the top results. Extract ONLY these fields: ${fieldsToExtract}. PRIORITIZE finding valid contact details for the selected fields. Look for businesses that are not just the most popular ones.`;
       break;
     case 'extreme':
-      countInstruction = "EXTREME MODE: We need maximum volume. Find at least 20-30 businesses or individuals in this specific batch. Look for hidden gems, new listings, and places with fewer reviews to expand the list.";
+      countInstruction = `EXTREME MODE: We need maximum volume. Find as many businesses or individuals as possible in this specific batch. Extract ONLY these fields: ${fieldsToExtract}. Prioritize finding comprehensive contact details for the selected fields. Actively search for lesser-known, niche, or newly established businesses to expand the list. CRITICAL: You MUST prioritize finding valid contact details for the selected fields. Avoid returning any results that are already well-known or highly popular if possible, focusing on breadth and depth. Ensure the results are exhaustive.`;
       break;
   }
 
@@ -60,7 +66,6 @@ export const searchBusinesses = async (
       Task: Search for businesses on Google Maps.
       Search Query: "${category}"
       Location: "${location}"
-      ${locationHints ? `Hints: "${locationHints}"` : ""}
       
       ${countInstruction}
       ${exclusionContext}
@@ -72,11 +77,13 @@ export const searchBusinesses = async (
       
       Output Format:
       Return a pure JSON array of objects.
-      Keys: "name", "address", "phone", "email", "website", "rating", "type".
+      Keys: "name", "address", "phone", "email", "website", "socialProfiles", "rating", "type".
       
       Rules:
+      - For fields not selected (${fieldsToExtract}), return an empty string or 0.
       - "phone" should be the public number.
       - "email" should be a plausible contact email if found, or leave empty string.
+      - "socialProfiles" should be an array of URLs.
       - "rating" should be the number (e.g. 4.5).
       - Do not wrap in markdown (no \`\`\`json). Just the raw JSON array.
     `;
@@ -103,11 +110,13 @@ export const searchBusinesses = async (
         
         Output Format:
         Return a pure JSON array of objects.
-        Keys: "name", "address", "phone", "email", "website", "rating", "type".
+        Keys: "name", "address", "phone", "email", "website", "socialProfiles", "rating", "type".
         
         Rules:
+        - For fields not selected (${fieldsToExtract}), return an empty string or 0.
         - "name" should be the member or business name.
         - "website" MUST be their Facebook profile or page URL.
+        - "socialProfiles" should be an array of URLs.
         - "phone" should be the public number if found.
         - "email" should be a plausible contact email if found, or leave empty string.
         - "rating" can be 0 if not applicable.
@@ -118,7 +127,6 @@ export const searchBusinesses = async (
       prompt = `
         Task: Search for business profiles on ${source}.
         Search Query: "${category} in ${location}"
-        ${locationHints ? `Hints: "${locationHints}"` : ""}
         
         ${countInstruction}
         ${exclusionContext}
@@ -130,11 +138,13 @@ export const searchBusinesses = async (
         
         Output Format:
         Return a pure JSON array of objects.
-        Keys: "name", "address", "phone", "email", "website", "rating", "type".
+        Keys: "name", "address", "phone", "email", "website", "socialProfiles", "rating", "type".
         
         Rules:
+        - For fields not selected (${fieldsToExtract}), return an empty string or 0.
         - "name" should be the business name.
         - "website" MUST be their ${source} profile URL (e.g. facebook.com/... or instagram.com/...).
+        - "socialProfiles" should be an array of URLs.
         - "phone" should be the public number if found.
         - "email" should be a plausible contact email if found, or leave empty string.
         - "rating" can be 0 if not applicable.
@@ -197,6 +207,7 @@ export const searchBusinesses = async (
       phone: item.phone || "N/A",
       email: item.email || "",
       website: item.website || "",
+      socialProfiles: Array.isArray(item.socialProfiles) ? item.socialProfiles : [],
       rating: typeof item.rating === 'number' ? item.rating : 0,
       status: 'New',
       source: sourceLabel,

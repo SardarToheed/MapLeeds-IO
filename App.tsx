@@ -269,8 +269,15 @@ const App: React.FC = () => {
   const [scrapeCategory, setScrapeCategory] = useState('');
   const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
   const [scrapeLocation, setScrapeLocation] = useState('');
-  const [scrapeLocationHints, setScrapeLocationHints] = useState('');
   const [scrapeMode, setScrapeMode] = useState<'fast' | 'deep' | 'extreme'>('fast');
+  const [scrapeFields, setScrapeFields] = useState({
+    name: true,
+    phone: true,
+    website: true,
+    address: true,
+    email: false,
+    socialProfiles: false
+  });
   const [scrapeSource, setScrapeSource] = useState<'Google Maps' | 'Facebook' | 'Instagram'>('Google Maps');
   const [isScraping, setIsScraping] = useState(false);
   const [isScrapingMore, setIsScrapingMore] = useState(false);
@@ -401,7 +408,6 @@ const App: React.FC = () => {
         // User cancelled or error
       }
     } else {
-      copyImageToClipboard('https://mapleads.online/'); // Fallback to copying URL
       navigator.clipboard.writeText(shareData.url);
       addToast("Link copied to clipboard!", 'success');
     }
@@ -465,6 +471,13 @@ const App: React.FC = () => {
       .replace(/{category}/g, lead.category)
       .replace(/{phone}/g, lead.phone);
   };
+
+  const calculateStats = useCallback((currentLeads: Lead[]) => {
+    const totalLeads = currentLeads.length;
+    const contactedLeads = currentLeads.filter(l => l.status === 'Contacted' || l.status === 'Converted').length;
+    const whatsappReady = currentLeads.filter(l => validateWhatsAppNumber(l.phone)).length;
+    return { totalLeads, contactedLeads, whatsappReady };
+  }, []);
 
   // --- ACTIONS ---
 
@@ -561,7 +574,7 @@ const App: React.FC = () => {
           scrapeCategory, 
           scrapeLocation, 
           scrapeMode, 
-          scrapeLocationHints, 
+          scrapeFields,
           currentKnownNames,
           scrapeSource
         );
@@ -600,10 +613,12 @@ const App: React.FC = () => {
         if (!isLoadMore) {
            addToHistory(scrapeCategory, scrapeLocation, gatheredLeads);
            await new Promise(r => setTimeout(r, 600));
-           addToast(`Search Complete! Found ${gatheredLeads.length} total businesses.`, 'success');
+           const stats = calculateStats(gatheredLeads);
+           addToast(`Search Complete! Total: ${stats.totalLeads}, Contacted: ${stats.contactedLeads}, WhatsApp-Ready: ${stats.whatsappReady}.`, 'success');
            setView('leads');
         } else {
-           addToast(`Added ${gatheredLeads.length} more leads`, 'success');
+           const stats = calculateStats([...leads, ...gatheredLeads]);
+           addToast(`Added ${gatheredLeads.length} leads. Total: ${stats.totalLeads}, Contacted: ${stats.contactedLeads}, WhatsApp-Ready: ${stats.whatsappReady}.`, 'success');
         }
       } else {
         setScrapeProgress(0);
@@ -1769,7 +1784,9 @@ const App: React.FC = () => {
                   onClick={() => setScrapeSource(src as any)}
                   className={`px-5 py-2.5 rounded-xl font-medium text-sm transition-all flex items-center gap-2 ${
                     scrapeSource === src 
-                      ? 'bg-googleBlue text-white shadow-md shadow-blue-500/20' 
+                      ? (src === 'Google Maps' ? 'bg-googleBlue text-white shadow-md shadow-blue-500/20' : 
+                         src === 'Facebook' ? 'bg-fbBlue text-white shadow-md shadow-blue-500/20' : 
+                         'bg-instaPink text-white shadow-md shadow-pink-500/20')
                       : 'bg-gray-50 text-textSec hover:bg-gray-100 border border-gray-200'
                   }`}
                 >
@@ -1858,35 +1875,43 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          <div className="space-y-2">
-             <label className="block text-sm font-semibold text-textMain ml-1">Specific Hints (Optional)</label>
-             <input
-                type="text"
-                className="w-full px-5 py-3 bg-gray-50/50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-googleBlue focus:bg-white transition-all outline-none text-sm text-textMain placeholder-gray-400"
-                placeholder="e.g. Near Central Park, Business Bay area"
-                value={scrapeLocationHints}
-                onChange={(e) => setScrapeLocationHints(e.target.value)}
-              />
+          <div className="pt-4">
+            <label className="block text-sm font-semibold text-textMain mb-3 ml-1">Data Fields to Extract</label>
+            <div className="grid grid-cols-2 gap-2">
+              {Object.entries(scrapeFields).map(([field, selected]) => (
+                <button
+                  key={field}
+                  onClick={() => setScrapeFields(prev => ({ ...prev, [field]: !prev[field as keyof typeof scrapeFields] }))}
+                  className={`flex items-center gap-2 p-3 rounded-xl border text-sm font-medium transition-all ${
+                    selected ? 'bg-blue-50 border-googleBlue text-googleBlue' : 'bg-white border-gray-200 text-textSec hover:border-gray-300'
+                  }`}
+                >
+                  <div className={`w-4 h-4 rounded border flex items-center justify-center ${selected ? 'bg-googleBlue border-googleBlue' : 'border-gray-300'}`}>
+                    {selected && <div className="w-2 h-2 bg-white rounded-sm" />}
+                  </div>
+                  {field.charAt(0).toUpperCase() + field.slice(1)}
+                </button>
+              ))}
+            </div>
           </div>
-
           <div className="pt-4">
             <label className="block text-sm font-semibold text-textMain mb-3 ml-1">Search Depth</label>
             <div className="grid grid-cols-3 gap-4">
               {[
-                { id: 'fast', label: 'Fast', icon: Zap, desc: 'Quick scan' },
-                { id: 'deep', label: 'Deep', icon: Layers, desc: 'Thorough' },
-                { id: 'extreme', label: 'Extreme', icon: Flame, desc: 'Max Volume' }
+                { id: 'fast', label: 'Fast', icon: Zap, desc: 'Quick scan', activeClass: 'border-googleGreen bg-green-50 text-googleGreen ring-1 ring-googleGreen' },
+                { id: 'deep', label: 'Deep', icon: Layers, desc: 'Thorough', activeClass: 'border-googlePurple bg-purple-50 text-googlePurple ring-1 ring-googlePurple' },
+                { id: 'extreme', label: 'Extreme', icon: Flame, desc: 'Max Volume', activeClass: 'border-googleRed bg-red-50 text-googleRed ring-1 ring-googleRed' }
               ].map((mode) => (
                 <button
                   key={mode.id}
                   onClick={() => setScrapeMode(mode.id as any)}
                   className={`flex flex-col items-center justify-center p-4 rounded-2xl border transition-all duration-200 relative overflow-hidden ${
                     scrapeMode === mode.id
-                      ? 'border-googleBlue bg-blue-50/50 text-googleBlue ring-1 ring-googleBlue shadow-sm'
+                      ? `${mode.activeClass} shadow-sm`
                       : 'border-gray-200 bg-white text-textSec hover:border-gray-300 hover:bg-gray-50'
                   }`}
                 >
-                  <mode.icon size={24} className={`mb-2 ${scrapeMode === mode.id ? 'text-googleBlue' : 'text-gray-400'}`} />
+                  <mode.icon size={24} className={`mb-2 ${scrapeMode === mode.id ? (mode.id === 'fast' ? 'text-googleGreen' : mode.id === 'deep' ? 'text-googlePurple' : 'text-googleRed') : 'text-gray-400'}`} />
                   <span className="font-semibold text-sm">{mode.label}</span>
                   <span className="text-[10px] opacity-70 mt-0.5">{mode.desc}</span>
                 </button>
@@ -1898,9 +1923,17 @@ const App: React.FC = () => {
         <button
           onClick={() => performScrape(false)}
           disabled={isScraping}
-          className="w-full py-5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-lg shadow-xl shadow-blue-500/20 transition-all active:scale-[0.98] flex items-center justify-center gap-3 relative z-10 cursor-pointer"
+          className={`w-full py-5 ${
+            scrapeMode === 'fast' ? 'bg-googleGreen shadow-googleGreen/20' : 
+            scrapeMode === 'deep' ? 'bg-googlePurple shadow-googlePurple/20' : 
+            'bg-googleRed shadow-googleRed/20'
+          } hover:opacity-90 text-white rounded-2xl font-bold text-lg shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-3 relative z-10 cursor-pointer`}
         >
-          {isScraping ? <><Loader2 className="animate-spin" /> Finding Leads...</> : <><Search size={22} /> Start Searching</>}
+          {isScraping ? (
+            <><Loader2 className={`animate-spin ${scrapeMode === 'fast' ? 'text-green-200' : scrapeMode === 'deep' ? 'text-purple-200' : 'text-red-200'}`} /> Finding Leads...</>
+          ) : (
+            <><Search size={22} /> Start Searching</>
+          )}
         </button>
       </div>
     </div>

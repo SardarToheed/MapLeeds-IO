@@ -13,6 +13,7 @@ export interface Lead {
   phone: string;
   email: string;
   website: string;
+  socialProfiles?: string[];
   rating: number;
   status: 'New' | 'Contacted' | 'Converted' | 'Invalid' | 'Skipped';
   source: string;

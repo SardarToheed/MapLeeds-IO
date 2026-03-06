@@ -1,14 +1,29 @@
 @import "tailwindcss";
 
+@layer base {
+  button {
+    @apply select-none;
+  }
+}
+
 @theme {
   --color-googleBlue: #1a73e8;
   --color-googleRed: #ea4335;
   --color-googleYellow: #fbbc04;
   --color-googleGreen: #34a853;
+  --color-googlePurple: #9c27b0;
   --color-waGreen: #25D366;
+  --color-fbBlue: #1877F2;
+  --color-instaPink: #E1306C;
   --color-textMain: #202124;
   --color-textSec: #5f6368;
   --color-background: #f8f9fa;
+
+  /* Gradients */
+  --gradient-logo: linear-gradient(to right, #1a73e8, #9c27b0, #ea4335);
+  --gradient-maps: linear-gradient(to right, #1a73e8, #34a853);
+  --gradient-fb: linear-gradient(to right, #1877F2, #1a73e8);
+  --gradient-insta: linear-gradient(to right, #E1306C, #9c27b0);
 
   --shadow-card: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
   --shadow-card-hover: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
