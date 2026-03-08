@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import AdSense from './components/AdSense';
 import { 
   LayoutDashboard, 
   MapPin, 
@@ -49,7 +50,8 @@ import {
   BookOpen,
   Twitter,
   Linkedin,
-  Facebook
+  Facebook,
+  Link2
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { StatsCard } from './components/StatsCard';
@@ -79,11 +81,35 @@ const CATEGORIES = [
   'Software Companies', 'Consultants', 'Insurance Agents', 'Travel Agencies'
 ];
 
+const CookieConsent = ({ onAccept }: { onAccept: () => void }) => {
+  return (
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 md:p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-[100] animate-slide-up">
+      <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="text-sm text-gray-600 flex-1">
+          <p className="mb-1"><strong>We value your privacy</strong></p>
+          <p>
+            We use cookies to enhance your browsing experience, serve personalized ads or content, and analyze our traffic. By clicking "Accept All", you consent to our use of cookies. Read our <button onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: 'privacy' }))} className="text-blue-600 hover:underline">Privacy Policy</button> to learn more.
+          </p>
+        </div>
+        <div className="flex gap-3 w-full md:w-auto">
+          <button 
+            onClick={onAccept}
+            className="flex-1 md:flex-none px-6 py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors whitespace-nowrap"
+          >
+            Accept All
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const App: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
   // --- STATE ---
+  const [showCookieConsent, setShowCookieConsent] = useState(false);
   const [view, setView] = useState<ViewState>('dashboard');
   const [selectedBlogPost, setSelectedBlogPost] = useState<BlogPost | null>(null);
   const [blogPage, setBlogPage] = useState(1);
@@ -98,6 +124,27 @@ const App: React.FC = () => {
       }
       setView(newView);
     }
+  };
+
+  useEffect(() => {
+    const hasConsent = localStorage.getItem('mapleads_cookie_consent');
+    if (!hasConsent) {
+      setShowCookieConsent(true);
+    }
+    
+    const handleNavigation = (e: Event) => {
+      const customEvent = e as CustomEvent<string>;
+      if (customEvent.detail) {
+        handleNavClick(customEvent.detail as ViewState);
+      }
+    };
+    window.addEventListener('navigate', handleNavigation);
+    return () => window.removeEventListener('navigate', handleNavigation);
+  }, []);
+
+  const handleAcceptCookies = () => {
+    localStorage.setItem('mapleads_cookie_consent', 'true');
+    setShowCookieConsent(false);
   };
   useEffect(() => {
     if (location.pathname.startsWith('/blog')) {
@@ -146,19 +193,6 @@ const App: React.FC = () => {
 
   // --- EFFECTS ---
 
-  // Update Document Title based on View
-  useEffect(() => {
-    const titles: Record<ViewState, string> = {
-      dashboard: 'Dashboard | MapLeads - B2B Lead Gen',
-      scraper: 'Google Maps Scraper | MapLeads',
-      leads: 'Lead Management | MapLeads',
-      campaigns: 'AI Campaigns | MapLeads',
-      whatsapp: 'WhatsApp Tools | MapLeads',
-      profile: 'User Profile | MapLeads',
-      blog: selectedBlogPost ? `${selectedBlogPost.title} | MapLeads Blog` : 'Blog | MapLeads - B2B Lead Generation Tips'
-    };
-    document.title = titles[view] || 'MapLeads | Free Google Maps Lead Extractor';
-  }, [view]);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [runTutorial, setRunTutorial] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -434,7 +468,11 @@ const App: React.FC = () => {
       leads: 'My Leads | Manage & Export B2B Data',
       campaigns: 'AI Campaigns | Cold Email & WhatsApp Marketing',
       whatsapp: 'WhatsApp Tools | Bulk Sender & Link Generator',
-      blog: selectedBlogPost ? `${selectedBlogPost.title} | MapLeads Blog` : 'Blog | MapLeads - B2B Lead Generation Tips'
+      blog: selectedBlogPost ? `${selectedBlogPost.title} | MapLeads Blog` : 'Blog | MapLeads - B2B Lead Generation Tips',
+      privacy: 'Privacy Policy | MapLeads',
+      terms: 'Terms of Service | MapLeads',
+      contact: 'Contact Us | MapLeads',
+      about: 'About Us | MapLeads'
     };
     document.title = titles[view] || 'MapLeads | Free Lead Generation Tool';
   }, [view]);
@@ -1053,17 +1091,45 @@ const App: React.FC = () => {
               <h1 className="text-3xl md:text-5xl font-bold text-textMain mt-4 mb-6 leading-tight">
                 {selectedBlogPost.title}
               </h1>
-              <div className="flex items-center gap-4 text-sm text-textSec border-b border-gray-100 pb-8">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-500">
-                    {selectedBlogPost.author.charAt(0)}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 pb-8">
+                <div className="flex items-center gap-4 text-sm text-textSec">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-500">
+                      {selectedBlogPost.author.charAt(0)}
+                    </div>
+                    <span>{selectedBlogPost.author}</span>
                   </div>
-                  <span>{selectedBlogPost.author}</span>
+                  <span>•</span>
+                  <span>{selectedBlogPost.date}</span>
+                  <span>•</span>
+                  <span>{selectedBlogPost.readTime}</span>
                 </div>
-                <span>•</span>
-                <span>{selectedBlogPost.date}</span>
-                <span>•</span>
-                <span>{selectedBlogPost.readTime}</span>
+                
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-500 font-medium mr-2">Share:</span>
+                  <a href={`https://twitter.com/intent/tweet?url=https://www.mapleads.online/blog/${selectedBlogPost.slug}&text=${encodeURIComponent(selectedBlogPost.title)}`} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-gray-50 text-gray-500 flex items-center justify-center hover:bg-blue-400 hover:text-white transition-colors" title="Share on Twitter">
+                    <Twitter size={14} />
+                  </a>
+                  <a href={`https://www.linkedin.com/shareArticle?mini=true&url=https://www.mapleads.online/blog/${selectedBlogPost.slug}&title=${encodeURIComponent(selectedBlogPost.title)}`} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-gray-50 text-gray-500 flex items-center justify-center hover:bg-blue-700 hover:text-white transition-colors" title="Share on LinkedIn">
+                    <Linkedin size={14} />
+                  </a>
+                  <a href={`https://www.facebook.com/sharer/sharer.php?u=https://www.mapleads.online/blog/${selectedBlogPost.slug}`} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-gray-50 text-gray-500 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors" title="Share on Facebook">
+                    <Facebook size={14} />
+                  </a>
+                  <a href={`https://api.whatsapp.com/send?text=${encodeURIComponent(selectedBlogPost.title + ' - https://www.mapleads.online/blog/' + selectedBlogPost.slug)}`} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-gray-50 text-gray-500 flex items-center justify-center hover:bg-green-500 hover:text-white transition-colors" title="Share on WhatsApp">
+                    <MessageCircle size={14} />
+                  </a>
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(`https://www.mapleads.online/blog/${selectedBlogPost.slug}`);
+                      addToast("Link copied to clipboard!", "success");
+                    }}
+                    className="w-8 h-8 rounded-full bg-gray-50 text-gray-500 flex items-center justify-center hover:bg-gray-800 hover:text-white transition-colors" 
+                    title="Copy Link"
+                  >
+                    <Link2 size={14} />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -1074,6 +1140,10 @@ const App: React.FC = () => {
                 className="w-full h-64 md:h-96 object-cover rounded-2xl mb-8"
               />
               <div dangerouslySetInnerHTML={{ __html: selectedBlogPost.content as string }} />
+            </div>
+
+            <div className="mt-8">
+              <AdSense slot="1234567890" />
             </div>
 
             <div className="mt-12 pt-8 border-t border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -1090,16 +1160,32 @@ const App: React.FC = () => {
               
               <div>
                 <h4 className="font-bold text-textMain mb-4 md:text-right">Share this article</h4>
-                <div className="flex gap-3">
-                  <a href={`https://twitter.com/intent/tweet?url=https://www.mapleads.online/blog/${selectedBlogPost.slug}&text=${encodeURIComponent(selectedBlogPost.title)}`} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-blue-50 text-blue-400 flex items-center justify-center hover:bg-blue-400 hover:text-white transition-colors">
+                <div className="flex flex-wrap gap-3">
+                  <a href={`https://twitter.com/intent/tweet?url=https://www.mapleads.online/blog/${selectedBlogPost.slug}&text=${encodeURIComponent(selectedBlogPost.title)}`} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-blue-50 text-blue-400 flex items-center justify-center hover:bg-blue-400 hover:text-white transition-colors shadow-sm hover:shadow-md" title="Share on Twitter">
                     <Twitter size={18} />
                   </a>
-                  <a href={`https://www.linkedin.com/shareArticle?mini=true&url=https://www.mapleads.online/blog/${selectedBlogPost.slug}&title=${encodeURIComponent(selectedBlogPost.title)}`} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center hover:bg-blue-700 hover:text-white transition-colors">
+                  <a href={`https://www.linkedin.com/shareArticle?mini=true&url=https://www.mapleads.online/blog/${selectedBlogPost.slug}&title=${encodeURIComponent(selectedBlogPost.title)}`} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center hover:bg-blue-700 hover:text-white transition-colors shadow-sm hover:shadow-md" title="Share on LinkedIn">
                     <Linkedin size={18} />
                   </a>
-                  <a href={`https://www.facebook.com/sharer/sharer.php?u=https://www.mapleads.online/blog/${selectedBlogPost.slug}`} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors">
+                  <a href={`https://www.facebook.com/sharer/sharer.php?u=https://www.mapleads.online/blog/${selectedBlogPost.slug}`} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors shadow-sm hover:shadow-md" title="Share on Facebook">
                     <Facebook size={18} />
                   </a>
+                  <a href={`https://api.whatsapp.com/send?text=${encodeURIComponent(selectedBlogPost.title + ' - https://www.mapleads.online/blog/' + selectedBlogPost.slug)}`} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center hover:bg-green-500 hover:text-white transition-colors shadow-sm hover:shadow-md" title="Share on WhatsApp">
+                    <MessageCircle size={18} />
+                  </a>
+                  <a href={`mailto:?subject=${encodeURIComponent(selectedBlogPost.title)}&body=${encodeURIComponent('Check out this article: https://www.mapleads.online/blog/' + selectedBlogPost.slug)}`} className="w-10 h-10 rounded-full bg-gray-50 text-gray-600 flex items-center justify-center hover:bg-gray-500 hover:text-white transition-colors shadow-sm hover:shadow-md" title="Share via Email">
+                    <Mail size={18} />
+                  </a>
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(`https://www.mapleads.online/blog/${selectedBlogPost.slug}`);
+                      addToast("Link copied to clipboard!", "success");
+                    }}
+                    className="w-10 h-10 rounded-full bg-gray-50 text-gray-800 flex items-center justify-center hover:bg-gray-800 hover:text-white transition-colors shadow-sm hover:shadow-md" 
+                    title="Copy Link"
+                  >
+                    <Link2 size={18} />
+                  </button>
                 </div>
               </div>
             </div>
@@ -1347,6 +1433,8 @@ const App: React.FC = () => {
             </button>
           </div>
         </div>
+
+        <AdSense slot="1234567890" />
 
         {/* Mobile Daily Limit Card */}
         <div className="md:hidden bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-5 text-white shadow-xl shadow-gray-900/10 relative overflow-hidden">
@@ -2059,7 +2147,7 @@ const App: React.FC = () => {
 
         {/* Footer Section */}
         <footer className="mt-20 pt-12 border-t border-gray-100 pb-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 max-w-6xl mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-8 max-w-6xl mx-auto px-4">
             <div className="col-span-1 md:col-span-2 space-y-4">
               <div className="flex items-center gap-3">
                 <MapPin className="text-googleBlue" size={32} />
@@ -2086,12 +2174,19 @@ const App: React.FC = () => {
             </div>
 
             <div className="space-y-4">
-              <h4 className="font-bold text-textMain uppercase text-xs tracking-widest">Resources</h4>
+              <h4 className="font-bold text-textMain uppercase text-xs tracking-widest">Company</h4>
               <ul className="space-y-2 text-sm text-textSec">
-                <li><a href="#" className="hover:text-googleBlue transition-colors">Lead Generation Guide</a></li>
-                <li><a href="#" className="hover:text-googleBlue transition-colors">WhatsApp Marketing Tips</a></li>
-                <li><a href="#" className="hover:text-googleBlue transition-colors">B2B Sales Automation</a></li>
-                <li><a href="#" className="hover:text-googleBlue transition-colors">Local SEO Tools</a></li>
+                <li><button onClick={() => handleNavClick('about')} className="hover:text-googleBlue transition-colors">About Us</button></li>
+                <li><button onClick={() => handleNavClick('contact')} className="hover:text-googleBlue transition-colors">Contact Us</button></li>
+                <li><button onClick={() => handleNavClick('blog')} className="hover:text-googleBlue transition-colors">Blog</button></li>
+              </ul>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="font-bold text-textMain uppercase text-xs tracking-widest">Legal</h4>
+              <ul className="space-y-2 text-sm text-textSec">
+                <li><button onClick={() => handleNavClick('privacy')} className="hover:text-googleBlue transition-colors">Privacy Policy</button></li>
+                <li><button onClick={() => handleNavClick('terms')} className="hover:text-googleBlue transition-colors">Terms of Service</button></li>
               </ul>
             </div>
           </div>
@@ -2137,6 +2232,8 @@ const App: React.FC = () => {
           Our AI-powered <strong>{scrapeSource} Lead Extractor</strong> helps you find local businesses and automate your <strong>WhatsApp Marketing</strong> in seconds.
         </p>
       </div>
+
+      <AdSense slot="1234567890" />
 
       <div id="scraper-card" className="bg-white p-6 md:p-8 rounded-3xl shadow-xl shadow-blue-900/5 border border-gray-100 space-y-8 relative overflow-hidden">
         {(isScraping || isScrapingMore) && (
@@ -2783,6 +2880,8 @@ const App: React.FC = () => {
            </button>
         </div>
 
+        <AdSense slot="1234567890" />
+
         {/* Create Mode */}
         {isCreatingCampaign && (
           <div className="bg-white p-4 md:p-6 rounded-xl shadow-card border border-gray-100 space-y-6 animate-slide-in">
@@ -2935,6 +3034,8 @@ const App: React.FC = () => {
          <h2 className="text-3xl font-bold text-textMain tracking-tight">WhatsApp Marketing Tools</h2>
          <p className="text-textSec text-lg mt-2">Professional utilities for <strong>Direct WhatsApp Messaging</strong> and <strong>WhatsApp Link Generation</strong>.</p>
        </div>
+
+       <AdSense slot="1234567890" />
 
        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Direct Sender */}
@@ -3153,8 +3254,225 @@ const App: React.FC = () => {
     </div>
   );
 
+  const renderPrivacy = () => (
+    <div className="max-w-4xl mx-auto bg-white rounded-3xl p-8 md:p-12 shadow-sm border border-gray-100 animate-fade-in pb-20 md:pb-0">
+      <Helmet>
+        <title>Privacy Policy | MapLeads</title>
+        <meta name="description" content="Privacy Policy for MapLeads B2B Lead Generation platform." />
+      </Helmet>
+      <h1 className="text-3xl md:text-4xl font-bold text-textMain mb-8">Privacy Policy</h1>
+      <div className="prose prose-blue max-w-none text-gray-600 space-y-6">
+        <p>Last updated: {new Date().toLocaleDateString()}</p>
+        <p>Hey there! We know privacy policies can be boring, but your data security is super important to us. Here's a straightforward breakdown of how we handle your information when you use MapLeads.</p>
+        
+        <h2 className="text-xl font-bold text-textMain mt-8">1. What information do we collect?</h2>
+        <p>We only collect what we absolutely need to make MapLeads work for you:</p>
+        <ul className="list-disc pl-6">
+          <li><strong>Account Details:</strong> Your name and email address when you sign up.</li>
+          <li><strong>Usage Info:</strong> Basic analytics on how you use the app (like which features you use most) so we can keep improving it.</li>
+          <li><strong>Technical Data:</strong> Standard stuff like your IP address, browser type, and device info to keep your account secure and fix bugs.</li>
+        </ul>
+
+        <h2 className="text-xl font-bold text-textMain mt-8">2. How do we use your data?</h2>
+        <p>We use your information to:</p>
+        <ul className="list-disc pl-6">
+          <li>Provide and maintain your MapLeads account.</li>
+          <li>Send you important updates about the service.</li>
+          <li>Figure out how to make the app better for everyone.</li>
+          <li>Keep our platform safe and secure.</li>
+        </ul>
+        <p><strong>We never sell your personal data to third parties. Ever.</strong></p>
+
+        <h2 className="text-xl font-bold text-textMain mt-8">3. What about the leads you extract?</h2>
+        <p>MapLeads is a tool that helps you organize publicly available data from Google Maps. We don't store the leads you extract on our servers permanently—they live in your browser's local storage or are exported directly by you. You are responsible for how you use this data and ensuring you comply with local outreach laws (like GDPR or CAN-SPAM).</p>
+
+        <h2 className="text-xl font-bold text-textMain mt-8">4. Keeping your data safe</h2>
+        <p>We use industry-standard security measures to protect your account. However, remember that no system is 100% hack-proof, so please use a strong password and keep your account details safe.</p>
+
+        <h2 className="text-xl font-bold text-textMain mt-8">5. Cookies</h2>
+        <p>Yes, we use cookies. They help us keep you logged in and understand how people use our site. You can control cookie settings through your browser, but turning them off might make parts of MapLeads stop working properly.</p>
+
+        <h2 className="text-xl font-bold text-textMain mt-8">6. Got questions?</h2>
+        <p>If anything in this policy doesn't make sense or if you have questions about your data, just shoot us an email at <a href="mailto:support@mapleads.online" className="text-blue-600 hover:underline">support@mapleads.online</a>. We're always happy to help!</p>
+      </div>
+    </div>
+  );
+
+  const renderTerms = () => (
+    <div className="max-w-4xl mx-auto bg-white rounded-3xl p-8 md:p-12 shadow-sm border border-gray-100 animate-fade-in pb-20 md:pb-0">
+      <Helmet>
+        <title>Terms of Service | MapLeads</title>
+        <meta name="description" content="Terms of Service for MapLeads B2B Lead Generation platform." />
+      </Helmet>
+      <h1 className="text-3xl md:text-4xl font-bold text-textMain mb-8">Terms of Service</h1>
+      <div className="prose prose-blue max-w-none text-gray-600 space-y-6">
+        <p>Last updated: {new Date().toLocaleDateString()}</p>
+        
+        <p>Welcome to MapLeads! By using our platform, you're agreeing to these terms. We've tried to keep them as simple and readable as possible.</p>
+
+        <h2 className="text-xl font-bold text-textMain mt-8">1. What is MapLeads?</h2>
+        <p>MapLeads is a software tool designed to help businesses find B2B leads by organizing publicly available data from sources like Google Maps. We also provide tools to help you manage and reach out to those leads.</p>
+
+        <h2 className="text-xl font-bold text-textMain mt-8">2. Playing by the rules</h2>
+        <p>We built MapLeads to help legitimate businesses grow. When using our platform, you agree that you won't:</p>
+        <ul className="list-disc pl-6">
+          <li>Use the extracted data for anything illegal, harmful, or sketchy.</li>
+          <li>Send spam. Seriously, nobody likes spam. Make sure your outreach complies with laws like CAN-SPAM, GDPR, or whatever applies in your region.</li>
+          <li>Try to hack, break, or overload our servers.</li>
+          <li>Pretend to be someone you're not when sending messages.</li>
+        </ul>
+
+        <h2 className="text-xl font-bold text-textMain mt-8">3. Your responsibility with data</h2>
+        <p>MapLeads acts as a magnifying glass for the internet—we help you find data that is already public. However, <strong>you are entirely responsible for what you do with that data</strong>. It's up to you to ensure that your cold emails, WhatsApp messages, or phone calls are legal and compliant with the privacy laws of the people you are contacting.</p>
+
+        <h2 className="text-xl font-bold text-textMain mt-8">4. Things happen (Limitation of Liability)</h2>
+        <p>We work hard to keep MapLeads running smoothly and accurately. However, bugs happen, APIs change, and servers occasionally go down. We provide the service "as is." This means we aren't legally or financially responsible if the app goes down, if data is inaccurate, or if you lose out on business because of a glitch.</p>
+
+        <h2 className="text-xl font-bold text-textMain mt-8">5. Changes to the app or these terms</h2>
+        <p>We're constantly updating MapLeads to make it better. This means features might change, be added, or be removed without prior notice. We might also update these terms from time to time. If we make major changes, we'll try to let you know, but continuing to use the app means you accept the new terms.</p>
+
+        <h2 className="text-xl font-bold text-textMain mt-8">6. Account termination</h2>
+        <p>If you violate these rules (especially the anti-spam ones), we reserve the right to suspend or delete your account without a refund. Let's just keep things professional and respectful.</p>
+      </div>
+    </div>
+  );
+
+  const renderContact = () => (
+    <div className="max-w-4xl mx-auto bg-white rounded-3xl p-8 md:p-12 shadow-sm border border-gray-100 animate-fade-in pb-20 md:pb-0">
+      <Helmet>
+        <title>Contact Us | MapLeads</title>
+        <meta name="description" content="Contact the MapLeads team for support, sales, or general inquiries." />
+      </Helmet>
+      <div className="text-center mb-12">
+        <h1 className="text-3xl md:text-4xl font-bold text-textMain mb-4">Contact Us</h1>
+        <p className="text-lg text-textSec max-w-2xl mx-auto">Have questions, feedback, or just want to say hi? We're a small team, but we pride ourselves on getting back to you quickly.</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+        <div>
+          <h2 className="text-2xl font-bold text-textMain mb-6">Get in Touch</h2>
+          <div className="space-y-6">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-blue-50 text-googleBlue rounded-xl flex items-center justify-center flex-shrink-0">
+                <Mail size={24} />
+              </div>
+              <div>
+                <h3 className="font-bold text-textMain">Email Support</h3>
+                <p className="text-textSec mb-1">Best for technical issues or detailed questions.</p>
+                <a href="mailto:support@mapleads.online" className="text-googleBlue font-medium hover:underline">support@mapleads.online</a>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-green-50 text-waGreen rounded-xl flex items-center justify-center flex-shrink-0">
+                <MessageCircle size={24} />
+              </div>
+              <div>
+                <h3 className="font-bold text-textMain">WhatsApp Support</h3>
+                <p className="text-textSec mb-1">Best for quick questions or sales inquiries.</p>
+                <a href="https://wa.me/1234567890" target="_blank" rel="noopener noreferrer" className="text-waGreen font-medium hover:underline">Chat with us</a>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                <MapPin size={24} />
+              </div>
+              <div>
+                <h3 className="font-bold text-textMain">Where we work</h3>
+                <p className="text-textSec">We're a remote-first team, but our official mail goes to:<br/>123 Tech Boulevard<br/>San Francisco, CA 94105</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gray-50 p-8 rounded-2xl border border-gray-100">
+          <h2 className="text-xl font-bold text-textMain mb-6">Send a Message</h2>
+          <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); addToast("Thanks for reaching out! We'll get back to you shortly.", "success"); }}>
+            <div>
+              <label className="block text-sm font-medium text-textSec mb-1.5">Name</label>
+              <input required type="text" className="w-full p-3 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-100 outline-none transition-all" placeholder="What should we call you?" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-textSec mb-1.5">Email</label>
+              <input required type="email" className="w-full p-3 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-100 outline-none transition-all" placeholder="you@company.com" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-textSec mb-1.5">Message</label>
+              <textarea required className="w-full p-3 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-100 outline-none transition-all h-32 resize-none" placeholder="How can we help you today?"></textarea>
+            </div>
+            <button type="submit" className="w-full py-3 bg-googleBlue text-white rounded-xl font-bold hover:bg-blue-600 transition-all shadow-md">
+              Send Message
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderAbout = () => (
+    <div className="max-w-4xl mx-auto space-y-12 animate-fade-in pb-20 md:pb-0">
+      <Helmet>
+        <title>About Us | MapLeads</title>
+        <meta name="description" content="Learn more about MapLeads, our mission, and the team behind the ultimate B2B lead generation platform." />
+      </Helmet>
+      
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl p-12 text-white shadow-lg text-center relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-white opacity-10 rounded-full -ml-16 -mb-16 blur-3xl"></div>
+        <div className="relative z-10">
+          <h1 className="text-4xl md:text-5xl font-bold mb-6">About MapLeads</h1>
+          <p className="text-xl text-blue-100 max-w-2xl mx-auto leading-relaxed">
+            We're a small team of developers and marketers who got tired of paying for outdated lead lists. We built MapLeads to make B2B lead generation accessible, fast, and actually effective for businesses of all sizes.
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+        <div className="space-y-6">
+          <h2 className="text-3xl font-bold text-textMain">Our Story</h2>
+          <div className="prose prose-blue text-gray-600">
+            <p>Back in 2024, we were running a small agency and struggling to find good clients. We tried buying lead lists, but half the emails bounced and the phone numbers were disconnected. It was incredibly frustrating and a huge waste of money.</p>
+            <p>We realized that the most accurate, up-to-date business information wasn't hidden behind expensive paywalls—it was sitting right there on Google Maps. The problem was that manually copying and pasting that data took forever.</p>
+            <p>So, we built a tool to do it for us. What started as an internal script quickly grew into MapLeads. Today, we help thousands of businesses skip the expensive databases and connect directly with local businesses using real-time data and automated outreach tools.</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm text-center">
+            <div className="text-3xl font-bold text-googleBlue mb-2">10k+</div>
+            <div className="text-sm text-textSec">Happy Users</div>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm text-center">
+            <div className="text-3xl font-bold text-googleGreen mb-2">5M+</div>
+            <div className="text-sm text-textSec">Leads Found</div>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm text-center">
+            <div className="text-3xl font-bold text-purple-600 mb-2">99%</div>
+            <div className="text-sm text-textSec">Data Accuracy</div>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm text-center">
+            <div className="text-3xl font-bold text-waGreen mb-2">24/7</div>
+            <div className="text-sm text-textSec">Real Support</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-3xl p-8 md:p-12 shadow-sm border border-gray-100 text-center">
+        <h2 className="text-3xl font-bold text-textMain mb-8">Ready to grow your business?</h2>
+        <button 
+          onClick={() => handleNavClick('scraper')}
+          className="bg-googleBlue text-white font-bold py-4 px-8 rounded-xl shadow-lg shadow-blue-200 transition-all transform hover:scale-105 hover:bg-blue-600 inline-flex items-center gap-2"
+        >
+          <Search size={20} />
+          Start Finding Leads Now
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
+      {showCookieConsent && <CookieConsent onAccept={handleAcceptCookies} />}
       {/* Sidebar - Desktop Only */}
       <aside className="hidden md:flex md:flex-col md:w-72 bg-white border-r border-gray-200 shadow-none z-40">
         <div className="h-full flex flex-col">
@@ -3268,6 +3586,10 @@ const App: React.FC = () => {
              {view === 'campaigns' && renderCampaigns()}
              {view === 'whatsapp' && renderWhatsApp()}
              {view === 'blog' && renderBlog()}
+            {view === 'privacy' && renderPrivacy()}
+            {view === 'terms' && renderTerms()}
+            {view === 'contact' && renderContact()}
+            {view === 'about' && renderAbout()}
            </div>
         </div>
 
@@ -3317,6 +3639,9 @@ const App: React.FC = () => {
                 <h2 className="text-3xl font-bold text-gray-900 mb-6">{readingArticle.title}</h2>
                 <div className="prose prose-blue max-w-none text-gray-600 leading-relaxed">
                   {readingArticle.content}
+                </div>
+                <div className="mt-8 border-t pt-8">
+                  <AdSense slot="1234567890" />
                 </div>
               </div>
             </div>

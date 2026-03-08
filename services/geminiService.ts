@@ -89,7 +89,7 @@ export const searchBusinesses = async (
     `;
   } else {
     // Facebook or Instagram
-    modelName = "gemini-3-flash-preview";
+    modelName = "gemini-3.1-pro-preview";
     toolsConfig = [{ googleSearch: {} }];
     
     const isFacebookGroupUrl = source === 'Facebook' && (category.includes('facebook.com/groups/') || category.includes('fb.com/groups/'));
@@ -336,7 +336,7 @@ export const generateEmailContent = async (
   `;
 
   const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview", 
+    model: "gemini-3.1-pro-preview", 
     contents: prompt,
     config: {
       responseMimeType: "application/json"
