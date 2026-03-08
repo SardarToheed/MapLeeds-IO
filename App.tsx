@@ -989,20 +989,50 @@ const App: React.FC = () => {
             <meta property="og:image" content={selectedBlogPost.imageUrl} />
             <meta property="og:type" content="article" />
             <meta name="twitter:card" content="summary_large_image" />
+            <meta name="twitter:title" content={selectedBlogPost.title} />
+            <meta name="twitter:description" content={selectedBlogPost.excerpt} />
+            <meta name="twitter:image" content={selectedBlogPost.imageUrl} />
             <link rel="canonical" href={`https://www.mapleads.online/blog/${selectedBlogPost.slug}`} />
             <script type="application/ld+json">
-              {JSON.stringify({
-                "@context": "https://schema.org",
-                "@type": "BlogPosting",
-                "headline": selectedBlogPost.title,
-                "image": [selectedBlogPost.imageUrl],
-                "datePublished": selectedBlogPost.date,
-                "author": [{
-                    "@type": "Person",
-                    "name": selectedBlogPost.author
-                }],
-                "description": selectedBlogPost.excerpt
-              })}
+              {JSON.stringify([
+                {
+                  "@context": "https://schema.org",
+                  "@type": "BlogPosting",
+                  "headline": selectedBlogPost.title,
+                  "image": [selectedBlogPost.imageUrl],
+                  "datePublished": selectedBlogPost.date,
+                  "author": [{
+                      "@type": "Person",
+                      "name": selectedBlogPost.author
+                  }],
+                  "description": selectedBlogPost.excerpt
+                },
+                {
+                  "@context": "https://schema.org",
+                  "@type": "BreadcrumbList",
+                  "itemListElement": [
+                    {
+                      "@type": "ListItem",
+                      "position": 1,
+                      "name": "Home",
+                      "item": "https://www.mapleads.online/"
+                    },
+                    {
+                      "@type": "ListItem",
+                      "position": 2,
+                      "name": "Blog",
+                      "item": "https://www.mapleads.online/blog"
+                    },
+                    {
+                      "@type": "ListItem",
+                      "position": 3,
+                      "name": selectedBlogPost.title,
+                      "item": `https://www.mapleads.online/blog/${selectedBlogPost.slug}`,
+                      "image": selectedBlogPost.imageUrl
+                    }
+                  ]
+                }
+              ])}
             </script>
           </Helmet>
           <button 
@@ -1139,7 +1169,12 @@ const App: React.FC = () => {
           <meta name="keywords" content="B2B lead generation, Google Maps scraping, automated outreach, Sardar Toheed, MapLeads" />
           <meta property="og:title" content="MapLeads Blog | B2B Lead Generation & Outreach Strategies" />
           <meta property="og:description" content="Expert insights on B2B lead generation, Google Maps scraping, and automated outreach strategies." />
+          <meta property="og:image" content={BLOG_POSTS[0]?.imageUrl || "https://images.unsplash.com/photo-1432828684209-2befa42b1013?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"} />
           <meta property="og:type" content="website" />
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:title" content="MapLeads Blog | B2B Lead Generation & Outreach Strategies" />
+          <meta name="twitter:description" content="Expert insights on B2B lead generation, Google Maps scraping, and automated outreach strategies." />
+          <meta name="twitter:image" content={BLOG_POSTS[0]?.imageUrl || "https://images.unsplash.com/photo-1432828684209-2befa42b1013?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"} />
           <link rel="canonical" href="https://www.mapleads.online/blog" />
           <script type="application/ld+json">
             {JSON.stringify({
