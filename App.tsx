@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { 
   LayoutDashboard, 
   MapPin, 
@@ -43,7 +45,11 @@ import {
   Square,
   Settings2,
   QrCode,
-  Star
+  Star,
+  BookOpen,
+  Twitter,
+  Linkedin,
+  Facebook
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { StatsCard } from './components/StatsCard';
@@ -57,6 +63,7 @@ import { searchBusinesses, generateEmailContent, hasApiKey, validateWhatsAppNumb
 import { generateWhatsAppLink, openWhatsAppTab, isMobileDevice, shareContent, copyImageToClipboard } from './services/whatsappService';
 import { Lead, Campaign, ViewState, SearchHistoryItem, UserProfile } from './types';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
+import { BLOG_POSTS, BlogPost } from './src/data/blogs';
 
 type SortKey = 'name' | 'rating' | 'status' | 'address';
 type SortDirection = 'asc' | 'desc';
@@ -73,8 +80,46 @@ const CATEGORIES = [
 ];
 
 const App: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   // --- STATE ---
   const [view, setView] = useState<ViewState>('dashboard');
+  const [selectedBlogPost, setSelectedBlogPost] = useState<BlogPost | null>(null);
+  const [blogPage, setBlogPage] = useState(1);
+  const POSTS_PER_PAGE = 6;
+
+  const handleNavClick = (newView: ViewState) => {
+    if (newView === 'blog') {
+      navigate('/blog');
+    } else {
+      if (location.pathname.startsWith('/blog')) {
+        navigate('/');
+      }
+      setView(newView);
+    }
+  };
+  useEffect(() => {
+    if (location.pathname.startsWith('/blog')) {
+      setView('blog');
+      const slug = location.pathname.split('/blog/')[1];
+      if (slug) {
+        const post = BLOG_POSTS.find(p => p.slug === slug);
+        if (post) {
+          setSelectedBlogPost(post);
+        } else {
+          setSelectedBlogPost(null);
+        }
+      } else {
+        setSelectedBlogPost(null);
+      }
+    } else {
+      // Map other routes or default
+      if (view === 'blog') {
+        setView('dashboard');
+      }
+    }
+  }, [location.pathname]);
   
   // Data
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -109,7 +154,8 @@ const App: React.FC = () => {
       leads: 'Lead Management | MapLeads',
       campaigns: 'AI Campaigns | MapLeads',
       whatsapp: 'WhatsApp Tools | MapLeads',
-      profile: 'User Profile | MapLeads'
+      profile: 'User Profile | MapLeads',
+      blog: selectedBlogPost ? `${selectedBlogPost.title} | MapLeads Blog` : 'Blog | MapLeads - B2B Lead Generation Tips'
     };
     document.title = titles[view] || 'MapLeads | Free Google Maps Lead Extractor';
   }, [view]);
@@ -338,6 +384,18 @@ const App: React.FC = () => {
       setShowOnboarding(true);
       localStorage.setItem('mapleads_onboarding', 'true');
     }
+
+    // Check URL params for shared search
+    const params = new URLSearchParams(window.location.search);
+    const sharedCategory = params.get('category');
+    const sharedLocation = params.get('location');
+    
+    if (sharedCategory) {
+      setScrapeCategory(decodeURIComponent(sharedCategory));
+      if (sharedLocation) setScrapeLocation(decodeURIComponent(sharedLocation));
+      setView('scraper');
+      // Optional: Auto-start search? Maybe too aggressive. Let user click button.
+    }
   }, []);
 
   useEffect(() => {
@@ -375,7 +433,8 @@ const App: React.FC = () => {
       scraper: 'Google Maps Scraper | Find Business Leads Free',
       leads: 'My Leads | Manage & Export B2B Data',
       campaigns: 'AI Campaigns | Cold Email & WhatsApp Marketing',
-      whatsapp: 'WhatsApp Tools | Bulk Sender & Link Generator'
+      whatsapp: 'WhatsApp Tools | Bulk Sender & Link Generator',
+      blog: selectedBlogPost ? `${selectedBlogPost.title} | MapLeads Blog` : 'Blog | MapLeads - B2B Lead Generation Tips'
     };
     document.title = titles[view] || 'MapLeads | Free Lead Generation Tool';
   }, [view]);
@@ -917,6 +976,277 @@ const App: React.FC = () => {
     setReadingArticle(articles[id] || null);
   };
 
+  const renderBlog = () => {
+    if (selectedBlogPost) {
+      return (
+        <div className="max-w-4xl mx-auto animate-fade-in pb-20 md:pb-0">
+          <Helmet>
+            <title>{selectedBlogPost.title} | MapLeads Blog</title>
+            <meta name="description" content={selectedBlogPost.excerpt} />
+            <meta name="keywords" content={`B2B lead generation, MapLeads, ${selectedBlogPost.author === 'Sardar Toheed' ? 'Sardar Toheed, ' : ''}${selectedBlogPost.tags.join(', ')}`} />
+            <meta property="og:title" content={selectedBlogPost.title} />
+            <meta property="og:description" content={selectedBlogPost.excerpt} />
+            <meta property="og:image" content={selectedBlogPost.imageUrl} />
+            <meta property="og:type" content="article" />
+            <meta name="twitter:card" content="summary_large_image" />
+            <link rel="canonical" href={`https://www.mapleads.online/blog/${selectedBlogPost.slug}`} />
+            <script type="application/ld+json">
+              {JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "BlogPosting",
+                "headline": selectedBlogPost.title,
+                "image": [selectedBlogPost.imageUrl],
+                "datePublished": selectedBlogPost.date,
+                "author": [{
+                    "@type": "Person",
+                    "name": selectedBlogPost.author
+                }],
+                "description": selectedBlogPost.excerpt
+              })}
+            </script>
+          </Helmet>
+          <button 
+            onClick={() => {
+              navigate('/blog');
+              window.scrollTo(0, 0);
+            }}
+            className="mb-6 flex items-center gap-2 text-gray-500 hover:text-googleBlue transition-colors"
+          >
+            <ArrowRight className="rotate-180" size={20} /> Back to Articles
+          </button>
+          
+          <article className="bg-white rounded-3xl p-8 md:p-12 shadow-sm border border-gray-100">
+            <div className="mb-8">
+              <span className="bg-blue-50 text-googleBlue px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                {selectedBlogPost.category}
+              </span>
+              <h1 className="text-3xl md:text-5xl font-bold text-textMain mt-4 mb-6 leading-tight">
+                {selectedBlogPost.title}
+              </h1>
+              <div className="flex items-center gap-4 text-sm text-textSec border-b border-gray-100 pb-8">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-500">
+                    {selectedBlogPost.author.charAt(0)}
+                  </div>
+                  <span>{selectedBlogPost.author}</span>
+                </div>
+                <span>•</span>
+                <span>{selectedBlogPost.date}</span>
+                <span>•</span>
+                <span>{selectedBlogPost.readTime}</span>
+              </div>
+            </div>
+
+            <div className="prose prose-lg prose-blue max-w-none text-gray-600 leading-relaxed">
+              <img 
+                src={selectedBlogPost.imageUrl} 
+                alt={selectedBlogPost.title} 
+                className="w-full h-64 md:h-96 object-cover rounded-2xl mb-8"
+              />
+              <div dangerouslySetInnerHTML={{ __html: selectedBlogPost.content as string }} />
+            </div>
+
+            <div className="mt-12 pt-8 border-t border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+              <div>
+                <h4 className="font-bold text-textMain mb-4">Tags</h4>
+                <div className="flex flex-wrap gap-2">
+                  {selectedBlogPost.tags.map(tag => (
+                    <span key={tag} className="bg-gray-50 text-gray-600 px-3 py-1 rounded-lg text-sm border border-gray-200">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-bold text-textMain mb-4 md:text-right">Share this article</h4>
+                <div className="flex gap-3">
+                  <a href={`https://twitter.com/intent/tweet?url=https://www.mapleads.online/blog/${selectedBlogPost.slug}&text=${encodeURIComponent(selectedBlogPost.title)}`} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-blue-50 text-blue-400 flex items-center justify-center hover:bg-blue-400 hover:text-white transition-colors">
+                    <Twitter size={18} />
+                  </a>
+                  <a href={`https://www.linkedin.com/shareArticle?mini=true&url=https://www.mapleads.online/blog/${selectedBlogPost.slug}&title=${encodeURIComponent(selectedBlogPost.title)}`} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center hover:bg-blue-700 hover:text-white transition-colors">
+                    <Linkedin size={18} />
+                  </a>
+                  <a href={`https://www.facebook.com/sharer/sharer.php?u=https://www.mapleads.online/blog/${selectedBlogPost.slug}`} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors">
+                    <Facebook size={18} />
+                  </a>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          {/* Suggested Blogs */}
+          <div className="mt-16 mb-8">
+            <h3 className="text-2xl font-bold text-textMain mb-8">Suggested Articles</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {BLOG_POSTS
+                .filter(post => post.id !== selectedBlogPost.id)
+                .slice(0, 2)
+                .map(post => (
+                  <article 
+                    key={post.id}
+                    onClick={() => {
+                      navigate(`/blog/${post.slug}`);
+                      window.scrollTo(0, 0);
+                    }}
+                    className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-lg transition-all cursor-pointer group flex flex-col h-full"
+                  >
+                    <div className="h-40 overflow-hidden relative">
+                      <img 
+                        src={post.imageUrl} 
+                        alt={post.title} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-googleBlue shadow-sm">
+                        {post.category}
+                      </div>
+                    </div>
+                    <div className="p-6 flex flex-col flex-grow">
+                      <h3 className="text-xl font-bold text-textMain mb-3 group-hover:text-googleBlue transition-colors line-clamp-2">
+                        {post.title}
+                      </h3>
+                      <p className="text-gray-600 mb-6 line-clamp-2 flex-grow">
+                        {post.excerpt}
+                      </p>
+                      <div className="flex items-center justify-between text-sm text-gray-500 mt-auto pt-4 border-t border-gray-50">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center font-bold text-xs">
+                            {post.author.charAt(0)}
+                          </div>
+                          <span>{post.author}</span>
+                        </div>
+                        <span>{post.readTime}</span>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const indexOfLastPost = blogPage * POSTS_PER_PAGE;
+    const indexOfFirstPost = indexOfLastPost - POSTS_PER_PAGE;
+    const currentPosts = BLOG_POSTS.slice(indexOfFirstPost, indexOfLastPost);
+    const totalPages = Math.ceil(BLOG_POSTS.length / POSTS_PER_PAGE);
+
+    return (
+      <div className="max-w-6xl mx-auto animate-fade-in pb-20 md:pb-0">
+        <Helmet>
+          <title>MapLeads Blog | B2B Lead Generation & Outreach Strategies</title>
+          <meta name="description" content="Expert insights on B2B lead generation, Google Maps scraping, and automated outreach strategies." />
+          <meta name="keywords" content="B2B lead generation, Google Maps scraping, automated outreach, Sardar Toheed, MapLeads" />
+          <meta property="og:title" content="MapLeads Blog | B2B Lead Generation & Outreach Strategies" />
+          <meta property="og:description" content="Expert insights on B2B lead generation, Google Maps scraping, and automated outreach strategies." />
+          <meta property="og:type" content="website" />
+          <link rel="canonical" href="https://www.mapleads.online/blog" />
+          <script type="application/ld+json">
+            {JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Blog",
+              "name": "MapLeads Blog",
+              "description": "Expert insights on B2B lead generation, Google Maps scraping, and automated outreach strategies.",
+              "url": "https://www.mapleads.online/blog"
+            })}
+          </script>
+        </Helmet>
+        <div className="text-center mb-12 pt-8">
+          <h2 className="text-4xl font-bold text-textMain tracking-tight mb-4">MapLeads Blog</h2>
+          <p className="text-textSec text-lg max-w-2xl mx-auto">
+            Expert insights on B2B lead generation, Google Maps scraping, and automated outreach strategies.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+          {currentPosts.map(post => (
+            <article 
+              key={post.id}
+              onClick={() => {
+                navigate(`/blog/${post.slug}`);
+                window.scrollTo(0, 0);
+              }}
+              className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-lg transition-all cursor-pointer group flex flex-col h-full"
+            >
+              <div className="h-48 overflow-hidden relative">
+                <img 
+                  src={post.imageUrl} 
+                  alt={post.title} 
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-googleBlue shadow-sm">
+                  {post.category}
+                </div>
+              </div>
+              <div className="p-6 flex flex-col flex-grow">
+                <div className="flex items-center gap-2 text-xs text-gray-400 mb-3">
+                  <span>{post.date}</span>
+                  <span>•</span>
+                  <span>{post.readTime}</span>
+                </div>
+                <h3 className="text-xl font-bold text-textMain mb-3 group-hover:text-googleBlue transition-colors line-clamp-2">
+                  {post.title}
+                </h3>
+                <p className="text-textSec text-sm line-clamp-3 mb-4 flex-grow">
+                  {post.excerpt}
+                </p>
+                <div className="flex items-center gap-2 text-sm font-semibold text-googleBlue mt-auto">
+                  Read Article <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-4 mb-12">
+            <button
+              onClick={() => {
+                setBlogPage(prev => Math.max(prev - 1, 1));
+                window.scrollTo(0, 0);
+              }}
+              disabled={blogPage === 1}
+              className={`p-2 rounded-xl border ${blogPage === 1 ? 'border-gray-100 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300'}`}
+            >
+              <ArrowRight className="rotate-180" size={20} />
+            </button>
+            
+            <div className="flex gap-2">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  onClick={() => {
+                    setBlogPage(page);
+                    window.scrollTo(0, 0);
+                  }}
+                  className={`w-10 h-10 rounded-xl font-bold text-sm transition-all ${
+                    blogPage === page 
+                      ? 'bg-googleBlue text-white shadow-lg shadow-blue-200' 
+                      : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => {
+                setBlogPage(prev => Math.min(prev + 1, totalPages));
+                window.scrollTo(0, 0);
+              }}
+              disabled={blogPage === totalPages}
+              className={`p-2 rounded-xl border ${blogPage === totalPages ? 'border-gray-100 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300'}`}
+            >
+              <ArrowRight size={20} />
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderDashboard = () => {
     const totalLeads = leads.length;
     const contacted = leads.filter(l => l.status === 'Contacted').length;
@@ -941,7 +1271,7 @@ const App: React.FC = () => {
               Automate your outreach and close more deals today.
             </p>
             <button 
-              onClick={() => setView('scraper')}
+              onClick={() => handleNavClick('scraper')}
               className="bg-white text-blue-600 hover:bg-blue-50 font-bold py-3 px-8 rounded-xl shadow-md transition-all transform hover:scale-105 flex items-center gap-2"
             >
               <Search size={20} />
@@ -1644,6 +1974,18 @@ const App: React.FC = () => {
               <h4 className="font-semibold text-textMain mb-2">How can I export leads to CSV or Excel?</h4>
               <p className="text-sm text-textSec">With MapLeads, you can easily export your extracted leads into CSV or Excel formats with a single click, making it simple to import them into your CRM or email marketing software.</p>
             </div>
+            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+              <h4 className="font-semibold text-textMain mb-2">How to extract leads from Facebook Groups?</h4>
+              <p className="text-sm text-textSec">MapLeads allows you to paste a Facebook Group link directly into the scraper. Our AI engine then extracts public member information and associated business details automatically.</p>
+            </div>
+            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+              <h4 className="font-semibold text-textMain mb-2">Is the Google Maps Scraper free?</h4>
+              <p className="text-sm text-textSec">Yes, MapLeads offers a powerful free tier for extracting business leads from Google Maps, complete with phone numbers and addresses.</p>
+            </div>
+            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+              <h4 className="font-semibold text-textMain mb-2">Can I extract Instagram business emails?</h4>
+              <p className="text-sm text-textSec">Yes, our Instagram scraper tool finds business profiles in your niche and extracts public contact information including emails and phone numbers.</p>
+            </div>
           </div>
         </div>
 
@@ -1667,11 +2009,11 @@ const App: React.FC = () => {
             <div className="space-y-4">
               <h4 className="font-bold text-textMain uppercase text-xs tracking-widest">Quick Links</h4>
               <ul className="space-y-2 text-sm text-textSec">
-                <li><button onClick={() => setView('dashboard')} className="hover:text-googleBlue transition-colors">Dashboard</button></li>
-                <li><button onClick={() => setView('scraper')} className="hover:text-googleBlue transition-colors">Google Maps Scraper</button></li>
-                <li><button onClick={() => setView('leads')} className="hover:text-googleBlue transition-colors">Lead Management</button></li>
-                <li><button onClick={() => setView('campaigns')} className="hover:text-googleBlue transition-colors">AI Campaigns</button></li>
-                <li><button onClick={() => setView('whatsapp')} className="hover:text-googleBlue transition-colors">WhatsApp Tools</button></li>
+                <li><button onClick={() => handleNavClick('dashboard')} className="hover:text-googleBlue transition-colors">Dashboard</button></li>
+                <li><button onClick={() => handleNavClick('scraper')} className="hover:text-googleBlue transition-colors">Google Maps Scraper</button></li>
+                <li><button onClick={() => handleNavClick('leads')} className="hover:text-googleBlue transition-colors">Lead Management</button></li>
+                <li><button onClick={() => handleNavClick('campaigns')} className="hover:text-googleBlue transition-colors">AI Campaigns</button></li>
+                <li><button onClick={() => handleNavClick('whatsapp')} className="hover:text-googleBlue transition-colors">WhatsApp Tools</button></li>
               </ul>
             </div>
 
@@ -1935,6 +2277,22 @@ const App: React.FC = () => {
             <><Search size={22} /> Start Searching</>
           )}
         </button>
+        
+        <div className="flex justify-center mt-4">
+          <button
+            onClick={() => {
+              const url = new URL(window.location.href);
+              url.searchParams.set('category', scrapeCategory);
+              if (scrapeLocation) url.searchParams.set('location', scrapeLocation);
+              window.history.pushState({}, '', url.toString());
+              navigator.clipboard.writeText(url.toString());
+              addToast('Search link copied to clipboard!', 'success');
+            }}
+            className="text-sm text-gray-500 hover:text-googleBlue flex items-center gap-2 transition-colors py-2 px-4 rounded-full hover:bg-gray-50"
+          >
+            <Share2 size={16} /> Share this search
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -2504,13 +2862,13 @@ const App: React.FC = () => {
   };
 
   const renderWhatsApp = () => (
-    <div className="max-w-2xl mx-auto space-y-6 animate-fade-in pb-20 md:pb-0">
+    <div className="max-w-6xl mx-auto space-y-6 animate-fade-in pb-20 md:pb-0">
        <div className="text-center mb-8 pt-8">
          <h2 className="text-3xl font-bold text-textMain tracking-tight">WhatsApp Marketing Tools</h2>
          <p className="text-textSec text-lg mt-2">Professional utilities for <strong>Direct WhatsApp Messaging</strong> and <strong>WhatsApp Link Generation</strong>.</p>
        </div>
 
-       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Direct Sender */}
           <div className="bg-white p-6 rounded-2xl shadow-card border border-gray-100 space-y-5 hover:shadow-lg transition-shadow">
              <div className="flex items-center gap-3 mb-2">
@@ -2530,12 +2888,24 @@ const App: React.FC = () => {
                  value={waDirectPhone}
                  onChange={e => setWaDirectPhone(e.target.value)}
                />
-               <textarea 
-                 className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm h-24 focus:bg-white focus:ring-2 focus:ring-green-100 focus:border-green-200 transition-all outline-none resize-none"
-                 placeholder="Message (Optional)"
-                 value={waDirectMsg}
-                 onChange={e => setWaDirectMsg(e.target.value)}
-               />
+               <div className="relative">
+                 <textarea 
+                   className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm h-24 focus:bg-white focus:ring-2 focus:ring-green-100 focus:border-green-200 transition-all outline-none resize-none"
+                   placeholder="Message (Optional)"
+                   value={waDirectMsg}
+                   onChange={e => setWaDirectMsg(e.target.value)}
+                 />
+                 <button
+                    onClick={() => {
+                      setWaDirectMsg(messageTemplate);
+                      addToast("Template loaded!", 'success');
+                    }}
+                    className="absolute bottom-2 right-2 text-xs bg-white border border-gray-200 px-2 py-1 rounded-lg hover:bg-gray-50 text-gray-600 flex items-center gap-1 transition-colors"
+                    title="Load saved template"
+                 >
+                    <Download size={12} /> Load Template
+                 </button>
+               </div>
              </div>
 
              <button 
@@ -2589,6 +2959,44 @@ const App: React.FC = () => {
                   <QrCode size={18}/>
                 </button>
              </div>
+          </div>
+
+          {/* Template Manager */}
+          <div className="bg-white p-6 rounded-2xl shadow-card border border-gray-100 space-y-5 hover:shadow-lg transition-shadow">
+             <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-purple-50 rounded-xl text-purple-600">
+                   <Edit3 size={24} />
+                </div>
+                <div>
+                   <h3 className="font-semibold text-textMain">Message Template</h3>
+                   <p className="text-xs text-textSec">Configure your default message</p>
+                </div>
+             </div>
+             
+             <div className="space-y-3">
+               <div className="relative">
+                 <textarea 
+                   className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm h-[132px] focus:bg-white focus:ring-2 focus:ring-purple-100 focus:border-purple-200 transition-all outline-none resize-none"
+                   placeholder="Enter your template here..."
+                   value={messageTemplate}
+                   onChange={e => setMessageTemplate(e.target.value)}
+                 />
+                 <div className="absolute bottom-2 right-2 flex gap-1">
+                    <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">{'{name}'}</span>
+                    <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">{'{category}'}</span>
+                 </div>
+               </div>
+             </div>
+
+             <button 
+               onClick={() => {
+                 localStorage.setItem('mapleads_template', messageTemplate);
+                 addToast("Template saved successfully!", 'success');
+               }}
+               className="w-full py-3 bg-white border border-purple-100 text-purple-600 rounded-xl font-bold hover:bg-purple-50 transition-all flex items-center justify-center gap-2"
+             >
+               <Save size={18} /> Save Template
+             </button>
           </div>
        </div>
 
@@ -2696,11 +3104,12 @@ const App: React.FC = () => {
               { id: 'leads', label: 'My Leads', icon: Users },
               { id: 'campaigns', label: 'Campaigns', icon: Rocket },
               { id: 'whatsapp', label: 'WhatsApp Tools', icon: MessageCircle },
+              { id: 'blog', label: 'Blog', icon: BookOpen },
             ].map((item) => (
               <button
                 key={item.id}
                 id={`desktop-nav-${item.id}`}
-                onClick={() => setView(item.id as ViewState)}
+                onClick={() => handleNavClick(item.id as ViewState)}
                 className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-200 group
                   ${view === item.id 
                     ? 'bg-blue-50 text-blue-600 shadow-sm ring-1 ring-blue-100' 
@@ -2790,6 +3199,7 @@ const App: React.FC = () => {
              {view === 'leads' && renderLeadsTable()}
              {view === 'campaigns' && renderCampaigns()}
              {view === 'whatsapp' && renderWhatsApp()}
+             {view === 'blog' && renderBlog()}
            </div>
         </div>
 
@@ -2864,11 +3274,12 @@ const App: React.FC = () => {
             { id: 'leads', label: 'Leads', icon: Users },
             { id: 'campaigns', label: 'Campaigns', icon: Rocket },
             { id: 'whatsapp', label: 'Tools', icon: MessageCircle },
+            { id: 'blog', label: 'Blog', icon: BookOpen },
           ].map((item) => (
             <button
               key={item.id}
               id={`mobile-nav-${item.id}`}
-              onClick={() => setView(item.id as ViewState)}
+              onClick={() => handleNavClick(item.id as ViewState)}
               className={`flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors active:scale-95 duration-200
                 ${view === item.id ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'}
               `}

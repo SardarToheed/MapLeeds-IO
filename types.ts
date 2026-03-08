@@ -59,4 +59,4 @@ export interface UserProfile {
   lastResetDate: string; // ISO date string (YYYY-MM-DD)
 }
 
-export type ViewState = 'dashboard' | 'scraper' | 'leads' | 'campaigns' | 'whatsapp' | 'profile';
+export type ViewState = 'dashboard' | 'scraper' | 'leads' | 'campaigns' | 'whatsapp' | 'profile' | 'blog';
