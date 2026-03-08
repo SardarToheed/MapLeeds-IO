@@ -1239,35 +1239,54 @@ const App: React.FC = () => {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex justify-center items-center gap-4 mb-12">
+          <div className="flex justify-center items-center gap-2 sm:gap-4 mb-12">
             <button
               onClick={() => {
                 setBlogPage(prev => Math.max(prev - 1, 1));
                 window.scrollTo(0, 0);
               }}
               disabled={blogPage === 1}
-              className={`p-2 rounded-xl border ${blogPage === 1 ? 'border-gray-100 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300'}`}
+              className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full border text-sm font-medium transition-all ${blogPage === 1 ? 'border-gray-100 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 shadow-sm'}`}
             >
-              <ArrowRight className="rotate-180" size={20} />
+              <ArrowRight className="rotate-180" size={16} />
+              <span className="hidden sm:inline">Previous</span>
             </button>
             
-            <div className="flex gap-2">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                <button
-                  key={page}
-                  onClick={() => {
-                    setBlogPage(page);
-                    window.scrollTo(0, 0);
-                  }}
-                  className={`w-10 h-10 rounded-xl font-bold text-sm transition-all ${
-                    blogPage === page 
-                      ? 'bg-googleBlue text-white shadow-lg shadow-blue-200' 
-                      : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
+            <div className="flex items-center gap-1 sm:gap-2">
+              {(() => {
+                const pages = [];
+                if (totalPages <= 7) {
+                  for (let i = 1; i <= totalPages; i++) pages.push(i);
+                } else {
+                  if (blogPage <= 4) {
+                    pages.push(1, 2, 3, 4, 5, '...', totalPages);
+                  } else if (blogPage >= totalPages - 3) {
+                    pages.push(1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+                  } else {
+                    pages.push(1, '...', blogPage - 1, blogPage, blogPage + 1, '...', totalPages);
+                  }
+                }
+                return pages.map((page, index) => (
+                  page === '...' ? (
+                    <span key={`ellipsis-${index}`} className="w-8 text-center text-gray-400 font-medium">...</span>
+                  ) : (
+                    <button
+                      key={page}
+                      onClick={() => {
+                        setBlogPage(page as number);
+                        window.scrollTo(0, 0);
+                      }}
+                      className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full font-semibold text-sm transition-all ${
+                        blogPage === page 
+                          ? 'bg-googleBlue text-white shadow-md shadow-blue-200' 
+                          : 'bg-white text-gray-600 border border-transparent hover:bg-gray-100'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  )
+                ));
+              })()}
             </div>
 
             <button
@@ -1276,9 +1295,10 @@ const App: React.FC = () => {
                 window.scrollTo(0, 0);
               }}
               disabled={blogPage === totalPages}
-              className={`p-2 rounded-xl border ${blogPage === totalPages ? 'border-gray-100 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300'}`}
+              className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full border text-sm font-medium transition-all ${blogPage === totalPages ? 'border-gray-100 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 shadow-sm'}`}
             >
-              <ArrowRight size={20} />
+              <span className="hidden sm:inline">Next</span>
+              <ArrowRight size={16} />
             </button>
           </div>
         )}
