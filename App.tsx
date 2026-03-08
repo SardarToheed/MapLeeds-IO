@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { 
   LayoutDashboard, 
@@ -1035,15 +1035,15 @@ const App: React.FC = () => {
               ])}
             </script>
           </Helmet>
-          <button 
+          <RouterLink 
+            to="/blog"
             onClick={() => {
-              navigate('/blog');
               window.scrollTo(0, 0);
             }}
-            className="mb-6 flex items-center gap-2 text-gray-500 hover:text-googleBlue transition-colors"
+            className="mb-6 flex items-center gap-2 text-gray-500 hover:text-googleBlue transition-colors w-fit"
           >
             <ArrowRight className="rotate-180" size={20} /> Back to Articles
-          </button>
+          </RouterLink>
           
           <article className="bg-white rounded-3xl p-8 md:p-12 shadow-sm border border-gray-100">
             <div className="mb-8">
@@ -1113,42 +1113,44 @@ const App: React.FC = () => {
                 .filter(post => post.id !== selectedBlogPost.id)
                 .slice(0, 2)
                 .map(post => (
-                  <article 
+                  <RouterLink 
+                    to={`/blog/${post.slug}`}
                     key={post.id}
                     onClick={() => {
-                      navigate(`/blog/${post.slug}`);
                       window.scrollTo(0, 0);
                     }}
-                    className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-lg transition-all cursor-pointer group flex flex-col h-full"
+                    className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-lg transition-all cursor-pointer group flex flex-col h-full block"
                   >
-                    <div className="h-40 overflow-hidden relative">
-                      <img 
-                        src={post.imageUrl} 
-                        alt={post.title} 
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-googleBlue shadow-sm">
-                        {post.category}
-                      </div>
-                    </div>
-                    <div className="p-6 flex flex-col flex-grow">
-                      <h3 className="text-xl font-bold text-textMain mb-3 group-hover:text-googleBlue transition-colors line-clamp-2">
-                        {post.title}
-                      </h3>
-                      <p className="text-gray-600 mb-6 line-clamp-2 flex-grow">
-                        {post.excerpt}
-                      </p>
-                      <div className="flex items-center justify-between text-sm text-gray-500 mt-auto pt-4 border-t border-gray-50">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center font-bold text-xs">
-                            {post.author.charAt(0)}
-                          </div>
-                          <span>{post.author}</span>
+                    <article className="flex flex-col h-full">
+                      <div className="h-40 overflow-hidden relative">
+                        <img 
+                          src={post.imageUrl} 
+                          alt={post.title} 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                        <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-googleBlue shadow-sm">
+                          {post.category}
                         </div>
-                        <span>{post.readTime}</span>
                       </div>
-                    </div>
-                  </article>
+                      <div className="p-6 flex flex-col flex-grow">
+                        <h3 className="text-xl font-bold text-textMain mb-3 group-hover:text-googleBlue transition-colors line-clamp-2">
+                          {post.title}
+                        </h3>
+                        <p className="text-gray-600 mb-6 line-clamp-2 flex-grow">
+                          {post.excerpt}
+                        </p>
+                        <div className="flex items-center justify-between text-sm text-gray-500 mt-auto pt-4 border-t border-gray-50">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center font-bold text-xs">
+                              {post.author.charAt(0)}
+                            </div>
+                            <span>{post.author}</span>
+                          </div>
+                          <span>{post.readTime}</span>
+                        </div>
+                      </div>
+                    </article>
+                  </RouterLink>
                 ))}
             </div>
           </div>
@@ -1195,41 +1197,43 @@ const App: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
           {currentPosts.map(post => (
-            <article 
+            <RouterLink 
+              to={`/blog/${post.slug}`}
               key={post.id}
               onClick={() => {
-                navigate(`/blog/${post.slug}`);
                 window.scrollTo(0, 0);
               }}
-              className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-lg transition-all cursor-pointer group flex flex-col h-full"
+              className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-lg transition-all cursor-pointer group flex flex-col h-full block"
             >
-              <div className="h-48 overflow-hidden relative">
-                <img 
-                  src={post.imageUrl} 
-                  alt={post.title} 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-googleBlue shadow-sm">
-                  {post.category}
+              <article className="flex flex-col h-full">
+                <div className="h-48 overflow-hidden relative">
+                  <img 
+                    src={post.imageUrl} 
+                    alt={post.title} 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-googleBlue shadow-sm">
+                    {post.category}
+                  </div>
                 </div>
-              </div>
-              <div className="p-6 flex flex-col flex-grow">
-                <div className="flex items-center gap-2 text-xs text-gray-400 mb-3">
-                  <span>{post.date}</span>
-                  <span>•</span>
-                  <span>{post.readTime}</span>
+                <div className="p-6 flex flex-col flex-grow">
+                  <div className="flex items-center gap-2 text-xs text-gray-400 mb-3">
+                    <span>{post.date}</span>
+                    <span>•</span>
+                    <span>{post.readTime}</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-textMain mb-3 group-hover:text-googleBlue transition-colors line-clamp-2">
+                    {post.title}
+                  </h3>
+                  <p className="text-textSec text-sm line-clamp-3 mb-4 flex-grow">
+                    {post.excerpt}
+                  </p>
+                  <div className="flex items-center gap-2 text-sm font-semibold text-googleBlue mt-auto">
+                    Read Article <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold text-textMain mb-3 group-hover:text-googleBlue transition-colors line-clamp-2">
-                  {post.title}
-                </h3>
-                <p className="text-textSec text-sm line-clamp-3 mb-4 flex-grow">
-                  {post.excerpt}
-                </p>
-                <div className="flex items-center gap-2 text-sm font-semibold text-googleBlue mt-auto">
-                  Read Article <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                </div>
-              </div>
-            </article>
+              </article>
+            </RouterLink>
           ))}
         </div>
 
@@ -1278,6 +1282,15 @@ const App: React.FC = () => {
             </button>
           </div>
         )}
+
+        {/* Hidden links for SEO to ensure all posts are discoverable by Googlebot */}
+        <div className="hidden" aria-hidden="true">
+          {BLOG_POSTS.map(post => (
+            <RouterLink key={`seo-${post.id}`} to={`/blog/${post.slug}`}>
+              {post.title}
+            </RouterLink>
+          ))}
+        </div>
       </div>
     );
   };
