@@ -118,8 +118,16 @@ const App: React.FC = () => {
   const handleNavClick = (newView: ViewState) => {
     if (newView === 'blog') {
       navigate('/blog');
+    } else if (newView === 'privacy') {
+      navigate('/privacy');
+    } else if (newView === 'terms') {
+      navigate('/terms');
+    } else if (newView === 'contact') {
+      navigate('/contact');
+    } else if (newView === 'about') {
+      navigate('/about');
     } else {
-      if (location.pathname.startsWith('/blog')) {
+      if (location.pathname !== '/') {
         navigate('/');
       }
       setView(newView);
@@ -160,9 +168,17 @@ const App: React.FC = () => {
       } else {
         setSelectedBlogPost(null);
       }
+    } else if (location.pathname === '/privacy') {
+      setView('privacy');
+    } else if (location.pathname === '/terms') {
+      setView('terms');
+    } else if (location.pathname === '/contact') {
+      setView('contact');
+    } else if (location.pathname === '/about') {
+      setView('about');
     } else {
       // Map other routes or default
-      if (view === 'blog') {
+      if (location.pathname === '/' && (view === 'blog' || view === 'privacy' || view === 'terms' || view === 'contact' || view === 'about')) {
         setView('dashboard');
       }
     }
@@ -1396,6 +1412,11 @@ const App: React.FC = () => {
               {post.title}
             </RouterLink>
           ))}
+          <RouterLink to="/privacy">Privacy Policy</RouterLink>
+          <RouterLink to="/terms">Terms of Service</RouterLink>
+          <RouterLink to="/contact">Contact Us</RouterLink>
+          <RouterLink to="/about">About Us</RouterLink>
+          <RouterLink to="/blog">Blog</RouterLink>
         </div>
       </div>
     );
@@ -2176,17 +2197,17 @@ const App: React.FC = () => {
             <div className="space-y-4">
               <h4 className="font-bold text-textMain uppercase text-xs tracking-widest">Company</h4>
               <ul className="space-y-2 text-sm text-textSec">
-                <li><button onClick={() => handleNavClick('about')} className="hover:text-googleBlue transition-colors">About Us</button></li>
-                <li><button onClick={() => handleNavClick('contact')} className="hover:text-googleBlue transition-colors">Contact Us</button></li>
-                <li><button onClick={() => handleNavClick('blog')} className="hover:text-googleBlue transition-colors">Blog</button></li>
+                <li><RouterLink to="/about" onClick={() => window.scrollTo(0,0)} className="hover:text-googleBlue transition-colors">About Us</RouterLink></li>
+                <li><RouterLink to="/contact" onClick={() => window.scrollTo(0,0)} className="hover:text-googleBlue transition-colors">Contact Us</RouterLink></li>
+                <li><RouterLink to="/blog" onClick={() => window.scrollTo(0,0)} className="hover:text-googleBlue transition-colors">Blog</RouterLink></li>
               </ul>
             </div>
 
             <div className="space-y-4">
               <h4 className="font-bold text-textMain uppercase text-xs tracking-widest">Legal</h4>
               <ul className="space-y-2 text-sm text-textSec">
-                <li><button onClick={() => handleNavClick('privacy')} className="hover:text-googleBlue transition-colors">Privacy Policy</button></li>
-                <li><button onClick={() => handleNavClick('terms')} className="hover:text-googleBlue transition-colors">Terms of Service</button></li>
+                <li><RouterLink to="/privacy" onClick={() => window.scrollTo(0,0)} className="hover:text-googleBlue transition-colors">Privacy Policy</RouterLink></li>
+                <li><RouterLink to="/terms" onClick={() => window.scrollTo(0,0)} className="hover:text-googleBlue transition-colors">Terms of Service</RouterLink></li>
               </ul>
             </div>
           </div>
@@ -3259,6 +3280,7 @@ const App: React.FC = () => {
       <Helmet>
         <title>Privacy Policy | MapLeads</title>
         <meta name="description" content="Privacy Policy for MapLeads B2B Lead Generation platform." />
+        <link rel="canonical" href="https://www.mapleads.online/privacy" />
       </Helmet>
       <h1 className="text-3xl md:text-4xl font-bold text-textMain mb-8">Privacy Policy</h1>
       <div className="prose prose-blue max-w-none text-gray-600 space-y-6">
@@ -3303,6 +3325,7 @@ const App: React.FC = () => {
       <Helmet>
         <title>Terms of Service | MapLeads</title>
         <meta name="description" content="Terms of Service for MapLeads B2B Lead Generation platform." />
+        <link rel="canonical" href="https://www.mapleads.online/terms" />
       </Helmet>
       <h1 className="text-3xl md:text-4xl font-bold text-textMain mb-8">Terms of Service</h1>
       <div className="prose prose-blue max-w-none text-gray-600 space-y-6">
@@ -3342,6 +3365,7 @@ const App: React.FC = () => {
       <Helmet>
         <title>Contact Us | MapLeads</title>
         <meta name="description" content="Contact the MapLeads team for support, sales, or general inquiries." />
+        <link rel="canonical" href="https://www.mapleads.online/contact" />
       </Helmet>
       <div className="text-center mb-12">
         <h1 className="text-3xl md:text-4xl font-bold text-textMain mb-4">Contact Us</h1>
@@ -3415,6 +3439,7 @@ const App: React.FC = () => {
       <Helmet>
         <title>About Us | MapLeads</title>
         <meta name="description" content="Learn more about MapLeads, our mission, and the team behind the ultimate B2B lead generation platform." />
+        <link rel="canonical" href="https://www.mapleads.online/about" />
       </Helmet>
       
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl p-12 text-white shadow-lg text-center relative overflow-hidden">
