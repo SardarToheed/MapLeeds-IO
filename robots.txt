@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://mapleads.online/sitemap.xml
+Sitemap: https://ais-pre-f2fa5oh4vz3kprsdvvj2yt-205584315413.asia-southeast1.run.app/sitemap.xml
