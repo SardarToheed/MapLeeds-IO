@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import AdSense from './components/AdSense';
+
 import { 
   LayoutDashboard, 
   MapPin, 
@@ -1159,7 +1159,6 @@ const App: React.FC = () => {
             </div>
 
             <div className="mt-8">
-              <AdSense slot="1234567890" />
             </div>
 
             <div className="mt-12 pt-8 border-t border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -1454,8 +1453,6 @@ const App: React.FC = () => {
             </button>
           </div>
         </div>
-
-        <AdSense slot="1234567890" />
 
         {/* Mobile Daily Limit Card */}
         <div className="md:hidden bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-5 text-white shadow-xl shadow-gray-900/10 relative overflow-hidden">
@@ -2253,9 +2250,6 @@ const App: React.FC = () => {
           Our AI-powered <strong>{scrapeSource} Lead Extractor</strong> helps you find local businesses and automate your <strong>WhatsApp Marketing</strong> in seconds.
         </p>
       </div>
-
-      <AdSense slot="1234567890" />
-
       <div id="scraper-card" className="bg-white p-6 md:p-8 rounded-3xl shadow-xl shadow-blue-900/5 border border-gray-100 space-y-8 relative overflow-hidden">
         {(isScraping || isScrapingMore) && (
           <div className="absolute inset-0 bg-white/95 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-8 animate-fade-in">
@@ -2901,8 +2895,6 @@ const App: React.FC = () => {
            </button>
         </div>
 
-        <AdSense slot="1234567890" />
-
         {/* Create Mode */}
         {isCreatingCampaign && (
           <div className="bg-white p-4 md:p-6 rounded-xl shadow-card border border-gray-100 space-y-6 animate-slide-in">
@@ -3056,7 +3048,6 @@ const App: React.FC = () => {
          <p className="text-textSec text-lg mt-2">Professional utilities for <strong>Direct WhatsApp Messaging</strong> and <strong>WhatsApp Link Generation</strong>.</p>
        </div>
 
-       <AdSense slot="1234567890" />
 
        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Direct Sender */}
@@ -3666,7 +3657,6 @@ const App: React.FC = () => {
                   {readingArticle.content}
                 </div>
                 <div className="mt-8 border-t pt-8">
-                  <AdSense slot="1234567890" />
                 </div>
               </div>
             </div>
