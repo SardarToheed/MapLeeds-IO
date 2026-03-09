@@ -510,7 +510,7 @@ const App: React.FC = () => {
     const shareData = {
       title: 'MapLeads - Free B2B Lead Extractor',
       text: 'Check out MapLeads! It extracts unlimited leads from Google Maps and automates WhatsApp marketing for free.',
-      url: 'https://mapleads.online/'
+      url: 'https://ais-pre-f2fa5oh4vz3kprsdvvj2yt-205584315413.asia-southeast1.run.app/'
     };
 
     if (navigator.share) {
@@ -1046,7 +1046,7 @@ const App: React.FC = () => {
             <meta name="twitter:title" content={selectedBlogPost.title} />
             <meta name="twitter:description" content={selectedBlogPost.excerpt} />
             <meta name="twitter:image" content={selectedBlogPost.imageUrl} />
-            <link rel="canonical" href={`https://www.mapleads.online/blog/${selectedBlogPost.slug}`} />
+            <link rel="canonical" href={`https://ais-pre-f2fa5oh4vz3kprsdvvj2yt-205584315413.asia-southeast1.run.app/blog/${selectedBlogPost.slug}`} />
             <script type="application/ld+json">
               {JSON.stringify([
                 {
@@ -1069,19 +1069,19 @@ const App: React.FC = () => {
                       "@type": "ListItem",
                       "position": 1,
                       "name": "Home",
-                      "item": "https://www.mapleads.online/"
+                      "item": "https://ais-pre-f2fa5oh4vz3kprsdvvj2yt-205584315413.asia-southeast1.run.app/"
                     },
                     {
                       "@type": "ListItem",
                       "position": 2,
                       "name": "Blog",
-                      "item": "https://www.mapleads.online/blog"
+                      "item": "https://ais-pre-f2fa5oh4vz3kprsdvvj2yt-205584315413.asia-southeast1.run.app/blog"
                     },
                     {
                       "@type": "ListItem",
                       "position": 3,
                       "name": selectedBlogPost.title,
-                      "item": `https://www.mapleads.online/blog/${selectedBlogPost.slug}`,
+                      "item": `https://ais-pre-f2fa5oh4vz3kprsdvvj2yt-205584315413.asia-southeast1.run.app/blog/${selectedBlogPost.slug}`,
                       "image": selectedBlogPost.imageUrl
                     }
                   ]
@@ -1123,21 +1123,21 @@ const App: React.FC = () => {
                 
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-gray-500 font-medium mr-2">Share:</span>
-                  <a href={`https://twitter.com/intent/tweet?url=https://www.mapleads.online/blog/${selectedBlogPost.slug}&text=${encodeURIComponent(selectedBlogPost.title)}`} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-gray-50 text-gray-500 flex items-center justify-center hover:bg-blue-400 hover:text-white transition-colors" title="Share on Twitter">
+                  <a href={`https://twitter.com/intent/tweet?url=https://ais-pre-f2fa5oh4vz3kprsdvvj2yt-205584315413.asia-southeast1.run.app/blog/${selectedBlogPost.slug}&text=${encodeURIComponent(selectedBlogPost.title)}`} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-gray-50 text-gray-500 flex items-center justify-center hover:bg-blue-400 hover:text-white transition-colors" title="Share on Twitter">
                     <Twitter size={14} />
                   </a>
-                  <a href={`https://www.linkedin.com/shareArticle?mini=true&url=https://www.mapleads.online/blog/${selectedBlogPost.slug}&title=${encodeURIComponent(selectedBlogPost.title)}`} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-gray-50 text-gray-500 flex items-center justify-center hover:bg-blue-700 hover:text-white transition-colors" title="Share on LinkedIn">
+                  <a href={`https://www.linkedin.com/shareArticle?mini=true&url=https://ais-pre-f2fa5oh4vz3kprsdvvj2yt-205584315413.asia-southeast1.run.app/blog/${selectedBlogPost.slug}&title=${encodeURIComponent(selectedBlogPost.title)}`} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-gray-50 text-gray-500 flex items-center justify-center hover:bg-blue-700 hover:text-white transition-colors" title="Share on LinkedIn">
                     <Linkedin size={14} />
                   </a>
-                  <a href={`https://www.facebook.com/sharer/sharer.php?u=https://www.mapleads.online/blog/${selectedBlogPost.slug}`} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-gray-50 text-gray-500 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors" title="Share on Facebook">
+                  <a href={`https://www.facebook.com/sharer/sharer.php?u=https://ais-pre-f2fa5oh4vz3kprsdvvj2yt-205584315413.asia-southeast1.run.app/blog/${selectedBlogPost.slug}`} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-gray-50 text-gray-500 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors" title="Share on Facebook">
                     <Facebook size={14} />
                   </a>
-                  <a href={`https://api.whatsapp.com/send?text=${encodeURIComponent(selectedBlogPost.title + ' - https://www.mapleads.online/blog/' + selectedBlogPost.slug)}`} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-gray-50 text-gray-500 flex items-center justify-center hover:bg-green-500 hover:text-white transition-colors" title="Share on WhatsApp">
+                  <a href={`https://api.whatsapp.com/send?text=${encodeURIComponent(selectedBlogPost.title + ' - https://ais-pre-f2fa5oh4vz3kprsdvvj2yt-205584315413.asia-southeast1.run.app/blog/' + selectedBlogPost.slug)}`} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-gray-50 text-gray-500 flex items-center justify-center hover:bg-green-500 hover:text-white transition-colors" title="Share on WhatsApp">
                     <MessageCircle size={14} />
                   </a>
                   <button 
                     onClick={() => {
-                      navigator.clipboard.writeText(`https://www.mapleads.online/blog/${selectedBlogPost.slug}`);
+                      navigator.clipboard.writeText(`https://ais-pre-f2fa5oh4vz3kprsdvvj2yt-205584315413.asia-southeast1.run.app/blog/${selectedBlogPost.slug}`);
                       addToast("Link copied to clipboard!", "success");
                     }}
                     className="w-8 h-8 rounded-full bg-gray-50 text-gray-500 flex items-center justify-center hover:bg-gray-800 hover:text-white transition-colors" 
@@ -1176,24 +1176,24 @@ const App: React.FC = () => {
               <div>
                 <h4 className="font-bold text-textMain mb-4 md:text-right">Share this article</h4>
                 <div className="flex flex-wrap gap-3">
-                  <a href={`https://twitter.com/intent/tweet?url=https://www.mapleads.online/blog/${selectedBlogPost.slug}&text=${encodeURIComponent(selectedBlogPost.title)}`} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-blue-50 text-blue-400 flex items-center justify-center hover:bg-blue-400 hover:text-white transition-colors shadow-sm hover:shadow-md" title="Share on Twitter">
+                  <a href={`https://twitter.com/intent/tweet?url=https://ais-pre-f2fa5oh4vz3kprsdvvj2yt-205584315413.asia-southeast1.run.app/blog/${selectedBlogPost.slug}&text=${encodeURIComponent(selectedBlogPost.title)}`} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-blue-50 text-blue-400 flex items-center justify-center hover:bg-blue-400 hover:text-white transition-colors shadow-sm hover:shadow-md" title="Share on Twitter">
                     <Twitter size={18} />
                   </a>
-                  <a href={`https://www.linkedin.com/shareArticle?mini=true&url=https://www.mapleads.online/blog/${selectedBlogPost.slug}&title=${encodeURIComponent(selectedBlogPost.title)}`} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center hover:bg-blue-700 hover:text-white transition-colors shadow-sm hover:shadow-md" title="Share on LinkedIn">
+                  <a href={`https://www.linkedin.com/shareArticle?mini=true&url=https://ais-pre-f2fa5oh4vz3kprsdvvj2yt-205584315413.asia-southeast1.run.app/blog/${selectedBlogPost.slug}&title=${encodeURIComponent(selectedBlogPost.title)}`} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center hover:bg-blue-700 hover:text-white transition-colors shadow-sm hover:shadow-md" title="Share on LinkedIn">
                     <Linkedin size={18} />
                   </a>
-                  <a href={`https://www.facebook.com/sharer/sharer.php?u=https://www.mapleads.online/blog/${selectedBlogPost.slug}`} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors shadow-sm hover:shadow-md" title="Share on Facebook">
+                  <a href={`https://www.facebook.com/sharer/sharer.php?u=https://ais-pre-f2fa5oh4vz3kprsdvvj2yt-205584315413.asia-southeast1.run.app/blog/${selectedBlogPost.slug}`} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors shadow-sm hover:shadow-md" title="Share on Facebook">
                     <Facebook size={18} />
                   </a>
-                  <a href={`https://api.whatsapp.com/send?text=${encodeURIComponent(selectedBlogPost.title + ' - https://www.mapleads.online/blog/' + selectedBlogPost.slug)}`} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center hover:bg-green-500 hover:text-white transition-colors shadow-sm hover:shadow-md" title="Share on WhatsApp">
+                  <a href={`https://api.whatsapp.com/send?text=${encodeURIComponent(selectedBlogPost.title + ' - https://ais-pre-f2fa5oh4vz3kprsdvvj2yt-205584315413.asia-southeast1.run.app/blog/' + selectedBlogPost.slug)}`} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center hover:bg-green-500 hover:text-white transition-colors shadow-sm hover:shadow-md" title="Share on WhatsApp">
                     <MessageCircle size={18} />
                   </a>
-                  <a href={`mailto:?subject=${encodeURIComponent(selectedBlogPost.title)}&body=${encodeURIComponent('Check out this article: https://www.mapleads.online/blog/' + selectedBlogPost.slug)}`} className="w-10 h-10 rounded-full bg-gray-50 text-gray-600 flex items-center justify-center hover:bg-gray-500 hover:text-white transition-colors shadow-sm hover:shadow-md" title="Share via Email">
+                  <a href={`mailto:?subject=${encodeURIComponent(selectedBlogPost.title)}&body=${encodeURIComponent('Check out this article: https://ais-pre-f2fa5oh4vz3kprsdvvj2yt-205584315413.asia-southeast1.run.app/blog/' + selectedBlogPost.slug)}`} className="w-10 h-10 rounded-full bg-gray-50 text-gray-600 flex items-center justify-center hover:bg-gray-500 hover:text-white transition-colors shadow-sm hover:shadow-md" title="Share via Email">
                     <Mail size={18} />
                   </a>
                   <button 
                     onClick={() => {
-                      navigator.clipboard.writeText(`https://www.mapleads.online/blog/${selectedBlogPost.slug}`);
+                      navigator.clipboard.writeText(`https://ais-pre-f2fa5oh4vz3kprsdvvj2yt-205584315413.asia-southeast1.run.app/blog/${selectedBlogPost.slug}`);
                       addToast("Link copied to clipboard!", "success");
                     }}
                     className="w-10 h-10 rounded-full bg-gray-50 text-gray-800 flex items-center justify-center hover:bg-gray-800 hover:text-white transition-colors shadow-sm hover:shadow-md" 
@@ -1278,14 +1278,14 @@ const App: React.FC = () => {
           <meta name="twitter:title" content="MapLeads Blog | B2B Lead Generation & Outreach Strategies" />
           <meta name="twitter:description" content="Expert insights on B2B lead generation, Google Maps scraping, and automated outreach strategies." />
           <meta name="twitter:image" content={BLOG_POSTS[0]?.imageUrl || "https://images.unsplash.com/photo-1432828684209-2befa42b1013?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"} />
-          <link rel="canonical" href="https://www.mapleads.online/blog" />
+          <link rel="canonical" href="https://ais-pre-f2fa5oh4vz3kprsdvvj2yt-205584315413.asia-southeast1.run.app/blog" />
           <script type="application/ld+json">
             {JSON.stringify({
               "@context": "https://schema.org",
               "@type": "Blog",
               "name": "MapLeads Blog",
               "description": "Expert insights on B2B lead generation, Google Maps scraping, and automated outreach strategies.",
-              "url": "https://www.mapleads.online/blog"
+              "url": "https://ais-pre-f2fa5oh4vz3kprsdvvj2yt-205584315413.asia-southeast1.run.app/blog"
             })}
           </script>
         </Helmet>
@@ -2175,8 +2175,8 @@ const App: React.FC = () => {
                 MapLeads is the ultimate B2B lead generation platform. We help businesses extract high-quality data from Google Maps and automate their outreach with integrated WhatsApp marketing tools.
               </p>
               <div className="flex gap-4">
-                <a href="https://mapleads.online/" className="text-textSec hover:text-googleBlue transition-colors"><ExternalLink size={18} /></a>
-                <a href="https://mapleads.online/sitemap.xml" className="text-textSec hover:text-googleBlue transition-colors text-xs font-medium uppercase tracking-wider">Sitemap</a>
+                <a href="https://ais-pre-f2fa5oh4vz3kprsdvvj2yt-205584315413.asia-southeast1.run.app/" className="text-textSec hover:text-googleBlue transition-colors"><ExternalLink size={18} /></a>
+                <a href="https://ais-pre-f2fa5oh4vz3kprsdvvj2yt-205584315413.asia-southeast1.run.app/sitemap.xml" className="text-textSec hover:text-googleBlue transition-colors text-xs font-medium uppercase tracking-wider">Sitemap</a>
               </div>
             </div>
             
@@ -3271,7 +3271,7 @@ const App: React.FC = () => {
       <Helmet>
         <title>Privacy Policy | MapLeads</title>
         <meta name="description" content="Privacy Policy for MapLeads B2B Lead Generation platform." />
-        <link rel="canonical" href="https://www.mapleads.online/privacy" />
+        <link rel="canonical" href="https://ais-pre-f2fa5oh4vz3kprsdvvj2yt-205584315413.asia-southeast1.run.app/privacy" />
       </Helmet>
       <h1 className="text-3xl md:text-4xl font-bold text-textMain mb-8">Privacy Policy</h1>
       <div className="prose prose-blue max-w-none text-gray-600 space-y-6">
@@ -3316,7 +3316,7 @@ const App: React.FC = () => {
       <Helmet>
         <title>Terms of Service | MapLeads</title>
         <meta name="description" content="Terms of Service for MapLeads B2B Lead Generation platform." />
-        <link rel="canonical" href="https://www.mapleads.online/terms" />
+        <link rel="canonical" href="https://ais-pre-f2fa5oh4vz3kprsdvvj2yt-205584315413.asia-southeast1.run.app/terms" />
       </Helmet>
       <h1 className="text-3xl md:text-4xl font-bold text-textMain mb-8">Terms of Service</h1>
       <div className="prose prose-blue max-w-none text-gray-600 space-y-6">
@@ -3356,7 +3356,7 @@ const App: React.FC = () => {
       <Helmet>
         <title>Contact Us | MapLeads</title>
         <meta name="description" content="Contact the MapLeads team for support, sales, or general inquiries." />
-        <link rel="canonical" href="https://www.mapleads.online/contact" />
+        <link rel="canonical" href="https://ais-pre-f2fa5oh4vz3kprsdvvj2yt-205584315413.asia-southeast1.run.app/contact" />
       </Helmet>
       <div className="text-center mb-12">
         <h1 className="text-3xl md:text-4xl font-bold text-textMain mb-4">Contact Us</h1>
@@ -3430,7 +3430,7 @@ const App: React.FC = () => {
       <Helmet>
         <title>About Us | MapLeads</title>
         <meta name="description" content="Learn more about MapLeads, our mission, and the team behind the ultimate B2B lead generation platform." />
-        <link rel="canonical" href="https://www.mapleads.online/about" />
+        <link rel="canonical" href="https://ais-pre-f2fa5oh4vz3kprsdvvj2yt-205584315413.asia-southeast1.run.app/about" />
       </Helmet>
       
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl p-12 text-white shadow-lg text-center relative overflow-hidden">
