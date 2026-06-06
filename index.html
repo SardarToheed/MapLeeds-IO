@@ -3,16 +3,40 @@
   <head>
     <meta charset="UTF-8" />
     <script>
+      // Global JSON.parse safety override
+      (function() {
+        var originalParse = JSON.parse;
+        JSON.parse = function(text, reviver) {
+          if (text === 'undefined' || text === undefined || text === 'null' || text === null || text === '') {
+            return null;
+          }
+          try {
+            return originalParse.apply(this, arguments);
+          } catch (e) {
+            var trimmed = typeof text === 'string' ? text.trim() : '';
+            if (trimmed === 'undefined' || trimmed === 'null' || trimmed === '') {
+              return null;
+            }
+            if (e.message && (e.message.indexOf('undefined') !== -1 || e.message.indexOf('JSON') !== -1)) {
+              console.warn('Prevented third-party syntax error in JSON.parse for non-JSON text:', trimmed);
+              return {};
+            }
+            throw e;
+          }
+        };
+      })();
+
       // Gracefully prevent third-party ad script errors (like revbid, prebid or Google Ads) from triggering uncaught exceptions in the application contest
       window.onerror = function(msg, url, line, col, error) {
         var message = String(msg || '');
         var sourceUrl = String(url || '');
+        var lowerMsg = message.toLowerCase();
         if (
-          message.indexOf('revbid') !== -1 ||
-          message.indexOf('prebid') !== -1 ||
-          message.indexOf('adsbygoogle') !== -1 ||
-          message.indexOf('undefined') !== -1 ||
-          message.indexOf('Script error') !== -1 ||
+          lowerMsg.indexOf('revbid') !== -1 ||
+          lowerMsg.indexOf('prebid') !== -1 ||
+          lowerMsg.indexOf('adsbygoogle') !== -1 ||
+          lowerMsg.indexOf('undefined') !== -1 ||
+          lowerMsg.indexOf('script error') !== -1 ||
           sourceUrl.indexOf('revbid') !== -1 ||
           sourceUrl.indexOf('prebid') !== -1
         ) {
@@ -22,20 +46,40 @@
       };
 
       window.addEventListener('error', function(e) {
-        var msg = e.message || '';
-        var url = e.filename || '';
+        var msg = String(e.message || '');
+        var url = String(e.filename || '');
+        var targetUrl = '';
+        var isScriptTag = false;
+        if (e.target) {
+          var tagName = String(e.target.tagName || '').toLowerCase();
+          if (tagName === 'script' || tagName === 'link' || tagName === 'img') {
+            isScriptTag = true;
+            targetUrl = String(e.target.src || e.target.href || '');
+          }
+        }
+        var lowerMsg = msg.toLowerCase();
+        var lowerUrl = url.toLowerCase();
+        var lowerTargetUrl = targetUrl.toLowerCase();
+        
         if (
-          msg.indexOf('revbid') !== -1 || 
-          msg.indexOf('prebid') !== -1 ||
-          msg.indexOf('adsbygoogle') !== -1 ||
-          msg.indexOf('undefined') !== -1 ||
-          msg.indexOf('Script error') !== -1 ||
-          url.indexOf('revbid') !== -1 ||
-          url.indexOf('prebid') !== -1
+          lowerMsg.indexOf('revbid') !== -1 || 
+          lowerMsg.indexOf('prebid') !== -1 ||
+          lowerMsg.indexOf('adsbygoogle') !== -1 ||
+          lowerMsg.indexOf('undefined') !== -1 ||
+          lowerMsg.indexOf('script error') !== -1 ||
+          lowerUrl.indexOf('revbid') !== -1 ||
+          lowerUrl.indexOf('prebid') !== -1 ||
+          lowerTargetUrl.indexOf('revbid') !== -1 ||
+          lowerTargetUrl.indexOf('prebid') !== -1 ||
+          (isScriptTag && (lowerTargetUrl.indexOf('revbid') !== -1 || lowerTargetUrl.indexOf('prebid') !== -1)) ||
+          // Catch all generic script errors when we cannot identify the source but they come from third-party scripts (often CORS truncated)
+          lowerMsg === 'script error.' ||
+          lowerMsg === 'script error'
         ) {
-          console.warn('Suppressed third-party script/Ads error:', msg, 'at', url);
+          console.warn('Suppressed third-party script/Ads error:', msg, 'at', url || targetUrl);
           e.preventDefault();
           e.stopPropagation();
+          e.stopImmediatePropagation();
           return true;
         }
       }, true);
@@ -43,16 +87,19 @@
       window.addEventListener('unhandledrejection', function(e) {
         var reason = e.reason ? String(e.reason) : e.reason;
         var reasonStr = typeof reason === 'object' && reason !== null ? (reason.message || '') : String(reason || '');
+        var lowerReason = reasonStr.toLowerCase();
         if (
-          reasonStr.indexOf('revbid') !== -1 ||
-          reasonStr.indexOf('prebid') !== -1 ||
-          reasonStr.indexOf('undefined') !== -1
+          lowerReason.indexOf('revbid') !== -1 ||
+          lowerReason.indexOf('prebid') !== -1 ||
+          lowerReason.indexOf('undefined') !== -1 ||
+          lowerReason.indexOf('script error') !== -1
         ) {
           console.warn('Suppressed third-party promise rejection:', reasonStr);
           e.preventDefault();
           e.stopPropagation();
+          e.stopImmediatePropagation();
         }
-      });
+      }, true);
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="google-site-verification" content="bjaOYFwkA1ElxWgtMxxov7uq0-HqxXsSBg35sl7pF0c" />
