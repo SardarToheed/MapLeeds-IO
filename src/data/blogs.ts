@@ -12,6 +12,9 @@ export interface BlogPost {
   category: string;
   imageUrl: string;
   tags: string[];
+  seoTitle?: string;
+  seoDescription?: string;
+  seoKeywords?: string;
 }
 
 export const BLOG_POSTS: BlogPost[] = [
@@ -26,6 +29,9 @@ export const BLOG_POSTS: BlogPost[] = [
     category: 'Lead Generation',
     imageUrl: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
     tags: ['Google Maps', 'Scraping', 'B2B Sales', 'Growth Hacking'],
+    seoTitle: 'Google Maps Scraping Guide 2026: B2B Lead Generation',
+    seoDescription: 'Master Google Maps scraping for B2B lead generation in 2026. Learn ethical techniques to extract high-quality local leads and boost your sales pipeline.',
+    seoKeywords: 'Google Maps scraping, B2B lead generation, local lead generation, scraping techniques, sales leads',
     content: `
       <p>Let's be honest: in the hyper-competitive world of B2B sales, finding good leads can feel like looking for a needle in a haystack. But what if I told you the haystack is actually a goldmine? Welcome to the definitive guide on <strong><a href="/blog/ultimate-guide-google-maps-scraping-2026" class="text-googleBlue hover:underline font-medium">Google Maps Scraping</a></strong> for 2026.</p>
 
@@ -86,6 +92,9 @@ export const BLOG_POSTS: BlogPost[] = [
     category: 'WhatsApp Marketing',
     imageUrl: 'https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
     tags: ['WhatsApp', 'Automation', 'Marketing', 'CRM'],
+    seoTitle: 'WhatsApp Marketing Automation: Safe Strategies 2026',
+    seoDescription: 'Learn how to automate WhatsApp marketing safely. Discover strategies to boost conversions without getting banned, including consent and drip campaigns.',
+    seoKeywords: 'WhatsApp marketing, automation, safe outreach, conversion rates, anti-spam',
     content: `
       <p>Let's look at the numbers: Email has a roughly 20% open rate on a good day. WhatsApp? A staggering 98%. If you aren't using WhatsApp for B2B outreach, you are quite literally leaving money on the table. But there's a catch, and it's a big one: WhatsApp absolutely hates spammers. Here is how to walk that fine line between smart automation and getting your number blocked forever.</p>
 
@@ -135,6 +144,9 @@ export const BLOG_POSTS: BlogPost[] = [
     category: 'Sales Strategy',
     imageUrl: 'https://images.unsplash.com/photo-1557200134-90327ee9fafa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
     tags: ['Email Marketing', 'WhatsApp', 'Comparison', 'ROI'],
+    seoTitle: 'Cold Email vs. WhatsApp Marketing: Which is Best?',
+    seoDescription: 'Compare cold email and WhatsApp marketing for local businesses. Analyze open rates, response times, and ROI to choose the right strategy.',
+    seoKeywords: 'cold email, WhatsApp marketing, local business, sales strategy, ROI',
     content: `
       <p>It's the question every marketer and sales rep asks: "Where should I actually be reaching out to my customers?" If you're targeting local businesses—like plumbers, dentists, or real estate agents—the answer isn't always black and white. Let's break down the pros and cons of the two heavyweights: <a href="/blog/cold-email-vs-whatsapp-marketing" class="text-googleBlue hover:underline font-medium">Cold Email</a> and WhatsApp.</p>
 

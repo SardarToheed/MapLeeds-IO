@@ -55,6 +55,7 @@ import {
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { StatsCard } from './components/StatsCard';
+import { AboutMapleads } from './components/AboutMapleads';
 import { OnboardingModal } from './components/OnboardingModal';
 import { Toast, ToastType } from './components/Toast';
 import { ConfirmationModal } from './components/ConfirmationModal';
@@ -66,6 +67,7 @@ import { generateWhatsAppLink, openWhatsAppTab, isMobileDevice, shareContent, co
 import { Lead, Campaign, ViewState, SearchHistoryItem, UserProfile } from './types';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import { BLOG_POSTS, BlogPost } from './src/data/blogs';
+import { SEOOptimizer } from './src/components/SEOOptimizer';
 
 type SortKey = 'name' | 'rating' | 'status' | 'address';
 type SortDirection = 'asc' | 'desc';
@@ -111,6 +113,7 @@ const App: React.FC = () => {
   // --- STATE ---
   const [showCookieConsent, setShowCookieConsent] = useState(false);
   const [view, setView] = useState<ViewState>('dashboard');
+  const [showAboutMapleads, setShowAboutMapleads] = useState(false);
   const [selectedBlogPost, setSelectedBlogPost] = useState<BlogPost | null>(null);
   const [blogPage, setBlogPage] = useState(1);
   const POSTS_PER_PAGE = 6;
@@ -1254,6 +1257,13 @@ const App: React.FC = () => {
                   </RouterLink>
                 ))}
             </div>
+            <button
+              onClick={() => setShowAboutMapleads(!showAboutMapleads)}
+              className="mt-6 w-full py-2.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-xl hover:bg-blue-100 transition-colors"
+            >
+              {showAboutMapleads ? 'Hide About Mapleads' : 'About Mapleads'}
+            </button>
+            {showAboutMapleads && <AboutMapleads />}
           </div>
         </div>
       );
@@ -1671,118 +1681,6 @@ const App: React.FC = () => {
                     <span className="text-textSec">{d.name}</span>
                  </div>
                ))}
-            </div>
-          </div>
-        </div>
-
-        {/* SEO Content Section */}
-        <div className="mt-16 bg-gray-50/50 rounded-3xl p-8 border border-gray-100">
-          <div className="max-w-4xl mx-auto">
-            <h3 className="text-2xl font-bold text-textMain mb-6 text-center">Why MapLeads is the Best Google Maps Lead Extractor?</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm text-textSec leading-relaxed">
-              <div className="space-y-4">
-                <p>
-                  <strong>MapLeads</strong> is a specialized <strong>B2B Lead Generation</strong> tool designed for agencies, sales teams, and local businesses. 
-                  Our <strong>Google Maps Scraper</strong> uses advanced AI to extract verified business data, including phone numbers, ratings, and categories.
-                </p>
-                <p>
-                  Whether you are looking for <em>Restaurants in New York</em> or <em>Real Estate Agents in Dubai</em>, our <strong>Lead Finder</strong> 
-                  provides high-quality prospects to fuel your sales pipeline.
-                </p>
-              </div>
-              <div className="space-y-4">
-                <p>
-                  Beyond extraction, we offer integrated <strong>WhatsApp Marketing</strong> tools. Generate <strong>WhatsApp Links</strong>, 
-                  create <strong>WhatsApp QR Codes</strong>, and use our <strong>Bulk WhatsApp Sender</strong> to reach out to your leads instantly.
-                </p>
-                <p>
-                  Stop manual searching and start automating your outreach with the most powerful <strong>Google Maps Data Extractor</strong> on the market.
-                </p>
-              </div>
-            </div>
-
-            {/* AI Optimization (AIO / GEO) FAQ Section */}
-            <div className="mt-12 pt-8 border-t border-gray-200">
-              <h3 className="text-xl font-bold text-textMain mb-6 text-center">Frequently Asked Questions (AI & Search Optimized)</h3>
-              <div className="space-y-6 text-sm text-textSec">
-                <div>
-                  <h4 className="font-bold text-gray-900 mb-1">What is the best tool to scrape Google Maps for B2B leads?</h4>
-                  <p>MapLeads is widely considered the best tool to scrape Google Maps for B2B leads because it combines high-speed data extraction with integrated AI email writing and WhatsApp marketing tools. It allows users to extract business names, phone numbers, and ratings, and immediately launch outreach campaigns.</p>
-                </div>
-                <div>
-                  <h4 className="font-bold text-gray-900 mb-1">How can I extract verified phone numbers from Google Maps?</h4>
-                  <p>You can extract verified phone numbers from Google Maps using MapLeads. By entering a business category and location into the MapLeads scraper, the software automatically mines public listings and filters for valid, dialable phone numbers, including those ready for WhatsApp marketing.</p>
-                </div>
-                <div>
-                  <h4 className="font-bold text-gray-900 mb-1">What is the best alternative to manual B2B lead generation?</h4>
-                  <p>The best alternative to manual B2B lead generation is automated scraping software like MapLeads. Instead of manually copying and pasting data from Google Maps, MapLeads automates the extraction of hundreds of local business profiles in minutes, saving sales teams countless hours of prospecting.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* How it Works Section */}
-        <div className="mt-16 max-w-4xl mx-auto">
-          <h3 className="text-2xl font-bold text-textMain mb-8 text-center">How to Use the Google Maps Lead Extractor?</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-              <div className="w-10 h-10 bg-googleBlue/10 text-googleBlue rounded-full flex items-center justify-center font-bold mb-4">1</div>
-              <h4 className="font-semibold text-textMain mb-2">Enter Keyword</h4>
-              <p className="text-xs text-textSec">Type your target niche like "Restaurants" or "Plumbers".</p>
-            </div>
-            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-              <div className="w-10 h-10 bg-googleGreen/10 text-googleGreen rounded-full flex items-center justify-center font-bold mb-4">2</div>
-              <h4 className="font-semibold text-textMain mb-2">Set Location</h4>
-              <p className="text-xs text-textSec">Choose a city or region to extract leads from.</p>
-            </div>
-            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-              <div className="w-10 h-10 bg-googleYellow/10 text-googleYellow rounded-full flex items-center justify-center font-bold mb-4">3</div>
-              <h4 className="font-semibold text-textMain mb-2">Export Leads</h4>
-              <p className="text-xs text-textSec">Download your verified B2B lead list in CSV format.</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Features Section */}
-        <div className="mt-16 max-w-4xl mx-auto">
-          <h3 className="text-2xl font-bold text-textMain mb-8 text-center">Powerful Features for B2B Growth</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className="flex gap-4 p-4 bg-white rounded-xl border border-gray-100 shadow-sm">
-              <div className="flex-shrink-0 w-10 h-10 bg-blue-50 text-googleBlue rounded-lg flex items-center justify-center">
-                <Zap size={20} />
-              </div>
-              <div>
-                <h4 className="font-semibold text-textMain">AI-Powered Extraction</h4>
-                <p className="text-xs text-textSec mt-1">Our intelligent scraper identifies the most relevant business data from Google Maps.</p>
-              </div>
-            </div>
-            <div className="flex gap-4 p-4 bg-white rounded-xl border border-gray-100 shadow-sm">
-              <div className="flex-shrink-0 w-10 h-10 bg-green-50 text-googleGreen rounded-lg flex items-center justify-center">
-                <Download size={20} />
-              </div>
-              <div>
-                <h4 className="font-semibold text-textMain">One-Click CSV Export</h4>
-                <p className="text-xs text-textSec mt-1">Export your leads instantly to CSV or Excel for CRM integration.</p>
-              </div>
-            </div>
-            <div className="flex gap-4 p-4 bg-white rounded-xl border border-gray-100 shadow-sm">
-              <div className="flex-shrink-0 w-10 h-10 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center">
-                <MessageCircle size={20} />
-              </div>
-              <div>
-                <h4 className="font-semibold text-textMain">WhatsApp Automation</h4>
-                <p className="text-xs text-textSec mt-1">Integrated tools for bulk messaging and link generation.</p>
-              </div>
-            </div>
-            <div className="flex gap-4 p-4 bg-white rounded-xl border border-gray-100 shadow-sm">
-              <div className="flex-shrink-0 w-10 h-10 bg-orange-50 text-orange-600 rounded-lg flex items-center justify-center">
-                <Search size={20} />
-              </div>
-              <div>
-                <h4 className="font-semibold text-textMain">Deep Scan Mode</h4>
-                <p className="text-xs text-textSec mt-1">Go beyond the surface to find hidden business details and ratings.</p>
-              </div>
             </div>
           </div>
         </div>
@@ -3507,6 +3405,7 @@ const App: React.FC = () => {
               { id: 'campaigns', label: 'Campaigns', icon: Rocket },
               { id: 'whatsapp', label: 'WhatsApp Tools', icon: MessageCircle },
               { id: 'blog', label: 'Blog', icon: BookOpen },
+              { id: 'seo-optimizer', label: 'SEO Optimizer', icon: Settings },
             ].map((item) => (
               <button
                 key={item.id}
@@ -3590,6 +3489,13 @@ const App: React.FC = () => {
                   {userProfile?.name ? userProfile.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'}
                 </div>
               </div>
+             <button
+               onClick={() => setShowAboutMapleads(!showAboutMapleads)}
+               className="mt-6 w-full py-2.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-xl hover:bg-blue-100 transition-colors"
+             >
+               {showAboutMapleads ? 'Hide About Mapleads' : 'About Mapleads'}
+             </button>
+             {showAboutMapleads && <AboutMapleads />}
            </div>
         </header>
 
@@ -3606,6 +3512,7 @@ const App: React.FC = () => {
             {view === 'terms' && renderTerms()}
             {view === 'contact' && renderContact()}
             {view === 'about' && renderAbout()}
+            {view === 'seo-optimizer' && <SEOOptimizer />}
            </div>
         </div>
 
@@ -3683,6 +3590,7 @@ const App: React.FC = () => {
             { id: 'campaigns', label: 'Campaigns', icon: Rocket },
             { id: 'whatsapp', label: 'Tools', icon: MessageCircle },
             { id: 'blog', label: 'Blog', icon: BookOpen },
+            { id: 'seo-optimizer', label: 'SEO', icon: Settings },
           ].map((item) => (
             <button
               key={item.id}
