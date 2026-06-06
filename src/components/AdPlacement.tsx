@@ -13,46 +13,45 @@ interface AdPlacementProps {
   className?: string;
 }
 
+// Map of ad types to their specifications
+const adSpecs = {
+  'skyscraper': {
+    'data-placement-id': 'revbid-skyscraper',
+    'id': 'revbid-skyscraper-2731',
+    'style': { minWidth: '120px', minHeight: '600px', textAlign: 'center' as const }
+  },
+  'mobile': {
+    'data-placement-id': 'revbid-mobile',
+    'id': 'revbid-mobile-3156',
+    'style': { minWidth: '300px', minHeight: '100px', textAlign: 'center' as const }
+  },
+  'square': {
+    'data-placement-id': 'revbid-square',
+    'id': 'revbid-square-13340',
+    'style': { minWidth: '300px', minHeight: '250px', textAlign: 'center' as const }
+  },
+  'big-skyscraper': {
+    'data-placement-id': 'revbid-big-skyscraper',
+    'id': 'revbid-big-skyscraper-4600',
+    'style': { minWidth: '120px', minHeight: '600px', textAlign: 'center' as const }
+  },
+  'leaderboard': {
+    'data-placement-id': 'revbid-leaderboard',
+    'id': 'revbid-leaderboard-8606',
+    'style': { minWidth: '468px', minHeight: '60px', textAlign: 'center' as const }
+  },
+  'big-leaderboard': {
+    'data-placement-id': 'revbid-big-leaderboard',
+    'id': 'revbid-big-leaderboard-5160',
+    'style': { minWidth: '468px', minHeight: '60px', textAlign: 'center' as const }
+  }
+};
+
 export const AdPlacement: React.FC<AdPlacementProps> = ({ type, className = '' }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Map of ad types to their specifications
-  const adSpecs = {
-    'skyscraper': {
-      'data-placement-id': 'revbid-skyscraper',
-      'id': 'revbid-skyscraper-2731',
-      'style': { minWidth: '120px', minHeight: '600px', textAlign: 'center' as const }
-    },
-    'mobile': {
-      'data-placement-id': 'revbid-mobile',
-      'id': 'revbid-mobile-3156',
-      'style': { minWidth: '300px', minHeight: '100px', textAlign: 'center' as const }
-    },
-    'square': {
-      'data-placement-id': 'revbid-square',
-      'id': 'revbid-square-13340',
-      'style': { minWidth: '300px', minHeight: '250px', textAlign: 'center' as const }
-    },
-    'big-skyscraper': {
-      'data-placement-id': 'revbid-big-skyscraper',
-      'id': 'revbid-big-skyscraper-4600',
-      'style': { minWidth: '120px', minHeight: '600px', textAlign: 'center' as const }
-    },
-    'leaderboard': {
-      'data-placement-id': 'revbid-leaderboard',
-      'id': 'revbid-leaderboard-8606',
-      'style': { minWidth: '468px', minHeight: '60px', textAlign: 'center' as const }
-    },
-    'big-leaderboard': {
-      'data-placement-id': 'revbid-big-leaderboard',
-      'id': 'revbid-big-leaderboard-5160',
-      'style': { minWidth: '468px', minHeight: '60px', textAlign: 'center' as const }
-    }
-  };
-
-  const spec = adSpecs[type];
-
   useEffect(() => {
+    const spec = adSpecs[type];
     if (!spec || !containerRef.current) return;
 
     // Clear previous elements inside the container wrapper immediately
@@ -77,7 +76,7 @@ export const AdPlacement: React.FC<AdPlacementProps> = ({ type, className = '' }
       // Create and append the revbid script dynamically to re-trigger ad delivery within this slot
       const script = document.createElement('script');
       script.type = 'text/javascript';
-      script.src = '//prebid.revbid.net/15171/revbid.js';
+      script.src = 'https://prebid.revbid.net/15171/revbid.js';
       script.async = true;
 
       // Handle script errors gracefully
@@ -95,7 +94,7 @@ export const AdPlacement: React.FC<AdPlacementProps> = ({ type, className = '' }
         containerRef.current.innerHTML = '';
       }
     };
-  }, [type, spec]);
+  }, [type]);
 
   // Clean, professional ad visual placeholder and wrapper to prevent layout shift
   return (
