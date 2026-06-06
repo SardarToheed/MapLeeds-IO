@@ -7,22 +7,16 @@
       (function() {
         var originalParse = JSON.parse;
         JSON.parse = function(text, reviver) {
-          if (text === 'undefined' || text === undefined || text === 'null' || text === null || text === '') {
+          if (text === undefined || text === null) {
             return null;
           }
-          try {
-            return originalParse.apply(this, arguments);
-          } catch (e) {
-            var trimmed = typeof text === 'string' ? text.trim() : '';
-            if (trimmed === 'undefined' || trimmed === 'null' || trimmed === '') {
+          if (typeof text === 'string') {
+            var trimmed = text.trim();
+            if (trimmed === 'undefined' || trimmed === 'null' || trimmed === '' || trimmed === 'NaN') {
               return null;
             }
-            if (e.message && (e.message.indexOf('undefined') !== -1 || e.message.indexOf('JSON') !== -1)) {
-              console.warn('Prevented third-party syntax error in JSON.parse for non-JSON text:', trimmed);
-              return {};
-            }
-            throw e;
           }
+          return originalParse.apply(this, arguments);
         };
       })();
 
