@@ -68,6 +68,7 @@ import { Lead, Campaign, ViewState, SearchHistoryItem, UserProfile } from './typ
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import { BLOG_POSTS, BlogPost } from './src/data/blogs';
 import { SEOOptimizer } from './src/components/SEOOptimizer';
+import { AdPlacement } from './src/components/AdPlacement';
 
 type SortKey = 'name' | 'rating' | 'status' | 'address';
 type SortDirection = 'asc' | 'desc';
@@ -256,7 +257,7 @@ const App: React.FC = () => {
     const savedProfile = localStorage.getItem('mapleads_user_profile');
     const today = new Date().toISOString().split('T')[0];
 
-    if (savedProfile) {
+    if (savedProfile && savedProfile !== 'undefined' && savedProfile !== 'null') {
       try {
         const profile: UserProfile = JSON.parse(savedProfile);
         if (profile.lastResetDate !== today) {
@@ -415,13 +416,13 @@ const App: React.FC = () => {
   useEffect(() => {
     // Load History
     const savedHistory = localStorage.getItem('mapleads_history');
-    if (savedHistory) {
+    if (savedHistory && savedHistory !== 'undefined' && savedHistory !== 'null') {
       try { setSearchHistory(JSON.parse(savedHistory)); } catch (e) {}
     }
     
     // Load Campaigns
     const savedCampaigns = localStorage.getItem('mapleads_campaigns');
-    if (savedCampaigns) {
+    if (savedCampaigns && savedCampaigns !== 'undefined' && savedCampaigns !== 'null') {
        try { setCampaigns(JSON.parse(savedCampaigns)); } catch(e) {}
     }
     
@@ -1158,7 +1159,17 @@ const App: React.FC = () => {
                 alt={selectedBlogPost.title} 
                 className="w-full h-64 md:h-96 object-cover rounded-2xl mb-8"
               />
+              
+              <div className="flex justify-center items-center my-6">
+                <AdPlacement type="square" />
+              </div>
+
               <div dangerouslySetInnerHTML={{ __html: selectedBlogPost.content as string }} />
+
+              <div className="flex justify-center items-center mt-8">
+                <AdPlacement type="big-leaderboard" className="hidden md:flex" />
+                <AdPlacement type="mobile" className="flex md:hidden" />
+              </div>
             </div>
 
             <div className="mt-8">
@@ -3501,19 +3512,43 @@ const App: React.FC = () => {
 
         {/* View Content */}
         <div className="flex-1 overflow-auto p-4 md:p-8 relative scroll-smooth">
-           <div className="max-w-7xl mx-auto">
-             {view === 'dashboard' && renderDashboard()}
-             {view === 'scraper' && renderScraper()}
-             {view === 'leads' && renderLeadsTable()}
-             {view === 'campaigns' && renderCampaigns()}
-             {view === 'whatsapp' && renderWhatsApp()}
-             {view === 'blog' && renderBlog()}
-            {view === 'privacy' && renderPrivacy()}
-            {view === 'terms' && renderTerms()}
-            {view === 'contact' && renderContact()}
-            {view === 'about' && renderAbout()}
-            {view === 'seo-optimizer' && <SEOOptimizer />}
-           </div>
+          <div className="flex justify-center items-start gap-8 max-w-[1550px] mx-auto">
+            {/* Sticky Skyscraper in Left Margin (Wide Screens Only) */}
+            <div className="hidden xl:block sticky top-6 z-20 flex-shrink-0 w-[140px]">
+              <AdPlacement type="skyscraper" />
+            </div>
+
+            <div className="flex-1 min-w-0 max-w-5xl">
+              {/* Top Banner Advertisement */}
+              <div className="mb-6">
+                <AdPlacement type="big-leaderboard" className="hidden md:flex" />
+                <AdPlacement type="mobile" className="flex md:hidden" />
+              </div>
+
+              {view === 'dashboard' && renderDashboard()}
+              {view === 'scraper' && renderScraper()}
+              {view === 'leads' && renderLeadsTable()}
+              {view === 'campaigns' && renderCampaigns()}
+              {view === 'whatsapp' && renderWhatsApp()}
+              {view === 'blog' && renderBlog()}
+              {view === 'privacy' && renderPrivacy()}
+              {view === 'terms' && renderTerms()}
+              {view === 'contact' && renderContact()}
+              {view === 'about' && renderAbout()}
+              {view === 'seo-optimizer' && <SEOOptimizer />}
+
+              {/* Bottom Banner Advertisement */}
+              <div className="mt-8">
+                <AdPlacement type="leaderboard" className="hidden md:flex" />
+                <AdPlacement type="square" className="flex md:hidden" />
+              </div>
+            </div>
+
+            {/* Sticky Big Skyscraper in Right Margin (Wide Screens Only) */}
+            <div className="hidden xl:block sticky top-6 z-20 flex-shrink-0 w-[140px]">
+              <AdPlacement type="big-skyscraper" />
+            </div>
+          </div>
         </div>
 
         {/* Floating Toasts */}
@@ -3560,8 +3595,15 @@ const App: React.FC = () => {
               </button>
               <div className="p-8 md:p-12">
                 <h2 className="text-3xl font-bold text-gray-900 mb-6">{readingArticle.title}</h2>
+                <div className="flex justify-center items-center my-6">
+                  <AdPlacement type="square" />
+                </div>
                 <div className="prose prose-blue max-w-none text-gray-600 leading-relaxed">
                   {readingArticle.content}
+                </div>
+                <div className="flex justify-center items-center mt-8">
+                  <AdPlacement type="big-leaderboard" className="hidden md:flex" />
+                  <AdPlacement type="mobile" className="flex md:hidden" />
                 </div>
                 <div className="mt-8 border-t pt-8">
                 </div>

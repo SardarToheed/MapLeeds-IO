@@ -344,7 +344,15 @@ export const generateEmailContent = async (
   });
 
   const text = response.text || "{}";
-  return JSON.parse(text);
+  try {
+    if (!text || text === "undefined" || text === "null") {
+      return { subject: "", body: "" };
+    }
+    return JSON.parse(text);
+  } catch (e) {
+    console.error("Failed to parse campaign generated JSON context", e, "Raw response text:", text);
+    return { subject: "", body: "" };
+  }
 };
 
 /**

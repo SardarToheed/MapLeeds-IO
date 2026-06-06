@@ -88,7 +88,10 @@ export const SEOOptimizer: React.FC = () => {
         }
       });
 
-      const responseText = response.text || '{}';
+      let responseText = response.text || '{}';
+      if (!responseText || responseText === 'undefined' || responseText === 'null') {
+        responseText = '{}';
+      }
       const parsed = JSON.parse(responseText);
       
       const schemaString = typeof parsed.schemaMarkup === 'object' 
