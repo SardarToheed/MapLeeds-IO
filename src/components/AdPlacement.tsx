@@ -13,83 +13,38 @@ interface AdPlacementProps {
   className?: string;
 }
 
-// Map of ad types to their specifications
-const adSpecs = {
-  'skyscraper': {
-    'data-placement-id': 'revbid-skyscraper',
-    'id': 'revbid-skyscraper-2731',
-    'style': { minWidth: '120px', minHeight: '600px', textAlign: 'center' as const }
-  },
-  'mobile': {
-    'data-placement-id': 'revbid-mobile',
-    'id': 'revbid-mobile-3156',
-    'style': { minWidth: '300px', minHeight: '100px', textAlign: 'center' as const }
-  },
-  'square': {
-    'data-placement-id': 'revbid-square',
-    'id': 'revbid-square-13340',
-    'style': { minWidth: '300px', minHeight: '250px', textAlign: 'center' as const }
-  },
-  'big-skyscraper': {
-    'data-placement-id': 'revbid-big-skyscraper',
-    'id': 'revbid-big-skyscraper-4600',
-    'style': { minWidth: '120px', minHeight: '600px', textAlign: 'center' as const }
-  },
-  'leaderboard': {
-    'data-placement-id': 'revbid-leaderboard',
-    'id': 'revbid-leaderboard-8606',
-    'style': { minWidth: '468px', minHeight: '60px', textAlign: 'center' as const }
-  },
-  'big-leaderboard': {
-    'data-placement-id': 'revbid-big-leaderboard',
-    'id': 'revbid-big-leaderboard-5160',
-    'style': { minWidth: '468px', minHeight: '60px', textAlign: 'center' as const }
-  }
-};
-
 export const AdPlacement: React.FC<AdPlacementProps> = ({ type, className = '' }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Exact HTML snippets as provided by the user, untouched
+  const adSnippets = {
+    'skyscraper': `<div data-placement-id="revbid-skyscraper" id='revbid-skyscraper-2731' style='min-width: 120px; min-height: 600px;text-align:center'></div>`,
+    'mobile': `<div data-placement-id="revbid-mobile" id='revbid-mobile-3156' style='min-width: 300px; min-height: 100px;text-align:center'></div>`,
+    'square': `<div data-placement-id="revbid-square" id='revbid-square-13340' style='min-width: 300px; min-height: 250px;text-align:center'></div>`,
+    'big-skyscraper': `<div data-placement-id="revbid-big-skyscraper" id='revbid-big-skyscraper-4600' style='min-width: 120px; min-height: 600px;text-align:center'></div>`,
+    'leaderboard': `<div data-placement-id="revbid-leaderboard" id='revbid-leaderboard-8606' style='min-width: 468px; min-height: 60px;text-align:center'></div>`,
+    'big-leaderboard': `<div data-placement-id="revbid-big-leaderboard" id='revbid-big-leaderboard-5160' style='min-width: 468px; min-height: 60px;text-align:center'></div>`
+  };
+
   useEffect(() => {
-    const spec = adSpecs[type];
-    if (!spec || !containerRef.current) return;
+    if (!containerRef.current) return;
 
-    // Clear previous elements inside the container wrapper immediately
-    containerRef.current.innerHTML = '';
+    // Direct injection of the exact raw HTML snippet to avoid React virtual DOM attribute transformations
+    containerRef.current.innerHTML = adSnippets[type];
 
-    const timer = setTimeout(() => {
-      if (!containerRef.current) return;
+    // Dynamically load the revbid script next to the newly injected container so it discovers the element immediately
+    const script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.src = 'https://prebid.revbid.net/15171/revbid.js';
+    script.async = true;
 
-      // Ensure it is empty
-      containerRef.current.innerHTML = '';
+    script.onerror = (err) => {
+      console.warn('Ad script loading failed for format:', type, err);
+    };
 
-      // Re-create the ad slot div
-      const adSlot = document.createElement('div');
-      adSlot.setAttribute('data-placement-id', spec['data-placement-id']);
-      adSlot.setAttribute('id', spec.id);
-      
-      // Apply styling
-      Object.assign(adSlot.style, spec.style);
-
-      containerRef.current.appendChild(adSlot);
-
-      // Create and append the revbid script dynamically to re-trigger ad delivery within this slot
-      const script = document.createElement('script');
-      script.type = 'text/javascript';
-      script.src = 'https://prebid.revbid.net/15171/revbid.js';
-      script.async = true;
-
-      // Handle script errors gracefully
-      script.onerror = (err) => {
-        console.warn('Ad script loading failed for format:', type, err);
-      };
-
-      // Append script as a sibling next to adSlot to ensure slot initialization
-      containerRef.current.appendChild(script);
-    }, 150);
+    containerRef.current.appendChild(script);
 
     return () => {
-      clearTimeout(timer);
       if (containerRef.current) {
         containerRef.current.innerHTML = '';
       }
@@ -109,3 +64,4 @@ export const AdPlacement: React.FC<AdPlacementProps> = ({ type, className = '' }
     </div>
   );
 };
+
