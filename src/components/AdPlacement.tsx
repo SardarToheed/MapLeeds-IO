@@ -84,8 +84,8 @@ export const AdPlacement: React.FC<AdPlacementProps> = ({ type, className = '' }
         console.warn('Ad script loading failed for format:', type, err);
       };
 
-      // Append script to ensure slot initialization
-      adSlot.appendChild(script);
+      // Append script as a sibling next to adSlot to ensure slot initialization
+      containerRef.current.appendChild(script);
     }, 150);
 
     return () => {
